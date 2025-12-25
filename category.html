@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Categories - QuickDash</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    
+    <style>
+        .cat-grid-page {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .cat-card-lg {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .cat-card-lg:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+            border-color: var(--primary);
+        }
+        .cat-icon-lg {
+            width: 80px; height: 80px;
+            object-fit: contain;
+            margin-bottom: 15px;
+            background: #f8f9fa;
+            border-radius: 50%;
+            padding: 10px;
+        }
+        .cat-title-lg {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+    </style>
+</head>
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <main class="container">
+        <div class="text-center py-4">
+            <h1>Explore Categories</h1>
+            <p class="text-muted">Freshest picks for your daily needs</p>
+        </div>
+
+        <div id="cat-grid" class="cat-grid-page">
+            <div class="loader-spinner"></div>
+        </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/assets/js/config.js"></script>
+    <script src="/assets/js/services/api.service.js"></script>
+    <script src="/assets/js/layout/main-layout.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const grid = document.getElementById('cat-grid');
+            try {
+                // Fetch all categories
+                const res = await ApiService.get('/catalog/categories/?page_size=50');
+                const categories = res.results || res;
+
+                // Filter only parents (if your API returns subcategories mixed in)
+                const parents = categories.filter(c => !c.parent);
+
+                if (parents.length === 0) {
+                    grid.innerHTML = '<p class="text-center w-100">No categories found.</p>';
+                    return;
+                }
+
+                grid.innerHTML = parents.map(c => `
+                    <div class="cat-card-lg" onclick="window.location.href='/search_results.html?slug=${c.slug}'">
+                        <img src="${c.icon_url || 'https://via.placeholder.com/80'}" class="cat-icon-lg" alt="${c.name}">
+                        <div class="cat-title-lg">${c.name}</div>
+                    </div>
+                `).join('');
+                
+            } catch (e) {
+                grid.innerHTML = '<p class="text-danger text-center w-100">Failed to load categories</p>';
+            }
+        });
+    </script>
+</body>
+</html>

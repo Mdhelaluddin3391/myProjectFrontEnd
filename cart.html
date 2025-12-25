@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Cart - QuickDash</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    <link rel="stylesheet" href="/assets/css/pages/checkout.css">
+</head>
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <main class="container">
+        <div class="d-flex justify-between align-center mb-4">
+            <h1>My Cart</h1>
+            <span id="item-count" class="text-muted">0 Items</span>
+        </div>
+
+        <div id="loader" class="loader-spinner"></div>
+
+        <div id="empty-cart" class="text-center py-5 d-none">
+            <img src="https://cdn-icons-png.flaticon.com/512/11329/11329060.png" style="width:150px; opacity:0.6; margin-bottom:20px;">
+            <h3>Your cart is empty</h3>
+            <p class="text-muted mb-4">Looks like you haven't added anything yet.</p>
+            <a href="/index.html" class="btn btn-primary">Start Shopping</a>
+        </div>
+
+        <div id="cart-content" class="cart-layout d-none">
+            <div class="cart-list" id="cart-items"></div>
+
+            <div class="cart-summary-wrapper">
+                <div class="card summary-card">
+                    <h3>Bill Details</h3>
+                    <div class="summary-row">
+                        <span>Item Total</span>
+                        <span id="subtotal">₹0</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Delivery Fee</span>
+                        <span class="text-success">FREE</span>
+                    </div>
+                    <div class="summary-row total-row">
+                        <span>To Pay</span>
+                        <span id="total">₹0</span>
+                    </div>
+                    
+                    <a href="/checkout.html" class="btn btn-primary w-100 mt-4">
+                        Proceed to Checkout
+                    </a>
+                    
+                    <div class="secure-badge">
+                        <i class="fas fa-shield-alt"></i> Safe & Secure Payment
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/assets/js/config.js"></script>
+    <script src="/assets/js/utils/formatters.js"></script>
+    <script src="/assets/js/utils/toast.js"></script>
+    <script src="/assets/js/services/api.service.js"></script>
+    <script src="/assets/js/services/cart.service.js"></script>
+    <script src="/assets/js/layout/main-layout.js"></script>
+    <script src="/assets/js/pages/cart.js"></script>
+</body>
+</html>

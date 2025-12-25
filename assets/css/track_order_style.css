@@ -1,0 +1,78 @@
+.track-layout {
+    display: flex;
+    height: 100%;
+}
+.track-sidebar {
+    width: 350px;
+    background: #fff;
+    padding: 30px;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+    z-index: 10;
+    overflow-y: auto;
+}
+.track-map-container {
+    flex-grow: 1;
+    position: relative;
+}
+
+/* Timeline */
+.timeline-wrapper { position: relative; margin-top: 20px; }
+.timeline-step {
+    position: relative;
+    padding-left: 30px;
+    padding-bottom: 40px;
+    border-left: 2px solid #eee;
+}
+.timeline-step:last-child { border-left: none; }
+
+.timeline-step .dot {
+    position: absolute;
+    left: -7px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    background: #ddd;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+.timeline-step.active .dot {
+    background: var(--primary);
+    box-shadow: 0 0 0 4px rgba(50,205,50,0.2);
+}
+.timeline-step.active { border-left-color: var(--primary); }
+.timeline-step h4 { margin: 0; font-size: 1rem; color: #aaa; }
+.timeline-step.active h4 { color: var(--text-main); }
+
+/* Rider Box */
+.rider-box {
+    background: #f0fdf4;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid #dcfce7;
+}
+.rider-avatar {
+    width: 40px; height: 40px;
+    background: #fff;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--primary);
+}
+.call-btn {
+    margin-left: auto;
+    width: 35px; height: 35px;
+    background: #fff;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--primary);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+@media(max-width: 768px) {
+    .track-layout { flex-direction: column; height: auto; }
+    .track-sidebar { width: 100%; order: 2; height: 50vh; }
+    .track-map-container { height: 50vh; order: 1; }
+}

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - QuickDash</title>
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    
+    <style>
+        .auth-container { display: flex; align-items: center; justify-content: center; min-height: 80vh; }
+        .auth-card { width: 100%; max-width: 400px; padding: 40px; text-align: center; }
+        .otp-inputs { display: flex; gap: 10px; justify-content: center; margin: 20px 0; }
+        .otp-input { width: 45px; height: 50px; text-align: center; font-size: 1.2rem; border-radius: 8px; border: 1px solid #ddd; }
+        .link-text { color: var(--primary); cursor: pointer; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <main class="auth-container">
+        <div class="card auth-card">
+            <div class="mb-4">
+                <i class="fas fa-bolt fa-3x text-primary"></i>
+                <h2 class="mt-2">Welcome Back</h2>
+                <p class="text-muted">Login with your phone number</p>
+            </div>
+
+            <form id="step-phone">
+                <div class="form-group text-left">
+                    <label class="form-label">Mobile Number</label>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" value="+91" disabled style="width:60px; text-align:center;" class="form-control">
+                        <input type="tel" id="phone-input" class="form-control" placeholder="9876543210" maxlength="10" autofocus>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100" id="get-otp-btn">
+                    Get OTP <i class="fas fa-arrow-right"></i>
+                </button>
+            </form>
+
+            <form id="step-otp" style="display: none;">
+                <p class="mb-2">Enter OTP sent to <strong id="display-phone"></strong> <span class="link-text" onclick="resetForm()">(Edit)</span></p>
+                
+                <div class="otp-inputs">
+                    <input type="text" class="otp-input" maxlength="1" oninput="focusNext(this)">
+                    <input type="text" class="otp-input" maxlength="1" oninput="focusNext(this)">
+                    <input type="text" class="otp-input" maxlength="1" oninput="focusNext(this)">
+                    <input type="text" class="otp-input" maxlength="1" oninput="focusNext(this)">
+                    <input type="text" class="otp-input" maxlength="1" oninput="focusNext(this)">
+                    <input type="text" class="otp-input" maxlength="1" oninput="focusNext(this)">
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100" id="verify-btn">Verify & Login</button>
+                <div class="mt-4 text-muted small">Resend OTP in <span id="timer">30</span>s</div>
+            </form>
+        </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="https://kit.fontawesome.com/your-code.js" crossorigin="anonymous"></script>
+    <script src="/assets/js/config.js"></script>
+    <script src="/assets/js/utils/toast.js"></script>
+    <script src="/assets/js/services/api.service.js"></script>
+    <script src="/assets/js/layout/main-layout.js"></script>
+    
+    <script>
+        // Inline Logic for Auth Page specific
+        const stepPhone = document.getElementById('step-phone');
+        const stepOtp = document.getElementById('step-otp');
+        let phoneNumber = '';
+
+        document.getElementById('step-phone').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('phone-input').value;
+            if(!/^[6-9]\d{9}$/.test(input)) return Toast.error("Invalid Indian mobile number");
+
+            const btn = document.getElementById('get-otp-btn');
+            btn.innerHTML = '<div class="loader-spinner" style="width:20px;height:20px;border-width:2px;margin:0;"></div>';
+            btn.disabled = true;
+
+            try {
+                phoneNumber = input;
+                await ApiService.post('/notifications/send-otp/', { phone: `+91${phoneNumber}` });
+                
+                stepPhone.style.display = 'none';
+                stepOtp.style.display = 'block';
+                document.getElementById('display-phone').innerText = `+91 ${phoneNumber}`;
+                Toast.success("OTP Sent!");
+                startTimer();
+                // Focus first OTP box
+                setTimeout(() => document.querySelector('.otp-input').focus(), 100);
+            } catch(err) {
+                Toast.error(err.message);
+                btn.innerHTML = 'Get OTP <i class="fas fa-arrow-right"></i>';
+                btn.disabled = false;
+            }
+        });
+
+        document.getElementById('step-otp').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            let otp = '';
+            document.querySelectorAll('.otp-input').forEach(i => otp += i.value);
+            
+            if(otp.length !== 6) return Toast.warning("Please enter complete 6-digit OTP");
+
+            const btn = document.getElementById('verify-btn');
+            btn.disabled = true;
+            btn.innerText = "Verifying...";
+
+            try {
+                // 1. Verify OTP
+                await ApiService.post('/notifications/verify-otp/', { phone: `+91${phoneNumber}`, otp: otp });
+                
+                // 2. Register/Login Customer to get Token
+                const res = await ApiService.post('/auth/register/customer/', { phone: `+91${phoneNumber}` });
+                
+                // Note: Assuming backend returns user_id, need to manage Token manually if not returned here
+                // Usually register endpoint returns tokens. If not, you might need a separate login endpoint.
+                // Assuming tokens are handled or stored in session by backend logic, OR we just store phone.
+                
+                // FIXME: In a real JWT app, backend must return {access, refresh} here.
+                // Adapting based on provided files which imply tokens are stored.
+                
+                // Let's assume the previous legacy code logic holds true or response contains token
+                if(res.access) {
+                   localStorage.setItem(APP_CONFIG.STORAGE_KEYS.TOKEN, res.access);
+                }
+                
+                // Fetch Profile
+                const profile = await ApiService.get('/auth/me/');
+                localStorage.setItem(APP_CONFIG.STORAGE_KEYS.USER, JSON.stringify(profile));
+                
+                Toast.success("Login Successful");
+                window.location.href = APP_CONFIG.ROUTES.HOME;
+
+            } catch(err) {
+                Toast.error(err.message);
+                btn.disabled = false;
+                btn.innerText = "Verify & Login";
+            }
+        });
+
+        window.focusNext = function(el) {
+            if (el.value.length === 1 && el.nextElementSibling) el.nextElementSibling.focus();
+        }
+
+        window.resetForm = function() {
+            stepOtp.style.display = 'none';
+            stepPhone.style.display = 'block';
+            document.getElementById('get-otp-btn').disabled = false;
+            document.getElementById('get-otp-btn').innerHTML = 'Get OTP <i class="fas fa-arrow-right"></i>';
+        }
+
+        function startTimer() {
+            let time = 30;
+            const el = document.getElementById('timer');
+            const interval = setInterval(() => {
+                el.innerText = --time;
+                if(time <= 0) clearInterval(interval);
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

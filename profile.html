@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Dashboard - QuickDash</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    <link rel="stylesheet" href="/assets/css/pages/account.css">
+</head>
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <main class="container">
+        <div class="account-layout">
+            <aside class="account-sidebar">
+                <div class="user-profile-brief">
+                    <div class="avatar-circle">U</div>
+                    <div>
+                        <h4 id="user-name" style="font-size:1rem; margin-bottom:2px;">User</h4>
+                        <p id="user-phone" class="text-muted small">...</p>
+                    </div>
+                </div>
+                
+                <nav>
+                    <a href="/profile.html" class="sidebar-link active"><i class="fas fa-th-large"></i> Dashboard</a>
+                    <a href="/orders.html" class="sidebar-link"><i class="fas fa-box"></i> My Orders</a>
+                    <a href="/addresses.html" class="sidebar-link"><i class="fas fa-map-marker-alt"></i> Addresses</a>
+                    <button onclick="logout()" class="sidebar-link logout w-100 border-0 bg-transparent text-left">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </nav>
+            </aside>
+
+            <div class="account-content">
+                <h2 class="mb-4">Dashboard</h2>
+
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="icon-box bg-green"><i class="fas fa-shopping-bag"></i></div>
+                        <div>
+                            <h3 id="total-orders">0</h3>
+                            <p class="text-muted small">Total Orders</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon-box bg-blue"><i class="fas fa-wallet"></i></div>
+                        <div>
+                            <h3 id="total-spent">₹0</h3>
+                            <p class="text-muted small">Total Spent</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-between align-center mb-3">
+                    <h3>Recent Orders</h3>
+                    <a href="/orders.html" class="text-primary small">View All</a>
+                </div>
+
+                <div id="recent-orders-list">
+                    <div class="loader-spinner"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/assets/js/config.js"></script>
+    <script src="/assets/js/utils/formatters.js"></script>
+    <script src="/assets/js/utils/toast.js"></script>
+    <script src="/assets/js/services/api.service.js"></script>
+    <script src="/assets/js/layout/main-layout.js"></script>
+    <script src="/assets/js/pages/profile.js"></script>
+    
+    <script>
+        // Inline Dashboard Logic for brevity
+        document.addEventListener('DOMContentLoaded', async () => {
+            if(!localStorage.getItem(APP_CONFIG.STORAGE_KEYS.TOKEN)) return window.location.href = '/auth.html';
+            
+            const user = JSON.parse(localStorage.getItem(APP_CONFIG.STORAGE_KEYS.USER) || '{}');
+            document.getElementById('user-phone').innerText = user.phone;
+
+            try {
+                const res = await ApiService.get('/orders/my/');
+                const orders = res.results || res;
+
+                document.getElementById('total-orders').innerText = orders.length;
+                const spent = orders.reduce((acc, curr) => acc + parseFloat(curr.final_amount), 0);
+                document.getElementById('total-spent').innerText = Formatters.currency(spent);
+
+                const list = document.getElementById('recent-orders-list');
+                if(orders.length === 0) {
+                    list.innerHTML = '<p class="text-muted">No orders placed yet.</p>';
+                } else {
+                    list.innerHTML = orders.slice(0, 3).map(o => `
+                        <div class="order-card">
+                            <div>
+                                <strong>Order #${o.id.slice(0,8).toUpperCase()}</strong>
+                                <p class="text-muted small">${Formatters.date(o.created_at)}</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="status-badge status-${o.status.toLowerCase()}">${o.status}</span>
+                                <div class="mt-1 font-weight-bold">${Formatters.currency(o.final_amount)}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        });
+    </script>
+</body>
+</html>

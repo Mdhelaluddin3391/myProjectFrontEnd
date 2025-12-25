@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Order - QuickDash</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    <link rel="stylesheet" href="/assets/css/track_order_style.css">
+</head>
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <main style="display: flex; flex-direction: column; height: calc(100vh - 70px);">
+        <div class="track-layout">
+            <div class="track-sidebar">
+                <div class="d-flex align-center gap-2 mb-4">
+                    <a href="/orders.html" class="text-muted"><i class="fas fa-arrow-left"></i></a>
+                    <h2 class="m-0" id="t-id">Tracking...</h2>
+                </div>
+
+                <div class="timeline-wrapper">
+                    <div class="timeline-step" id="step-confirmed">
+                        <div class="dot"></div>
+                        <div class="content">
+                            <h4>Order Confirmed</h4>
+                            <p class="small text-muted">We have received your order</p>
+                        </div>
+                    </div>
+                    <div class="timeline-step" id="step-packed">
+                        <div class="dot"></div>
+                        <div class="content">
+                            <h4>Packed</h4>
+                            <p class="small text-muted">Items gathered and packed</p>
+                        </div>
+                    </div>
+                    <div class="timeline-step" id="step-dispatched">
+                        <div class="dot"></div>
+                        <div class="content">
+                            <h4>Out for Delivery</h4>
+                            <div id="rider-info" class="rider-box d-none">
+                                <div class="rider-avatar"><i class="fas fa-biking"></i></div>
+                                <div>
+                                    <div class="font-weight-bold">Rahul Kumar</div>
+                                    <div class="small">Your delivery partner</div>
+                                </div>
+                                <a href="tel:+919876543210" class="call-btn"><i class="fas fa-phone"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="timeline-step" id="step-delivered">
+                        <div class="dot"></div>
+                        <div class="content">
+                            <h4>Delivered</h4>
+                            <p class="small text-muted">Enjoy your items!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="track-map-container">
+                <div id="map" style="width: 100%; height: 100%; background: #eee; display: flex; align-items: center; justify-content: center; color: #777;">
+                    Map Loading...
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_KEY&callback=initMap" async defer></script>
+    <script src="/assets/js/config.js"></script>
+    <script src="/assets/js/services/api.service.js"></script>
+    <script src="/assets/js/layout/main-layout.js"></script>
+    
+    <script>
+        let map, marker, orderId;
+        
+        window.initMap = function() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 12.9716, lng: 77.5946 },
+                zoom: 14,
+                disableDefaultUI: true
+            });
+            marker = new google.maps.Marker({ map: map });
+            
+            // Start Tracking
+            orderId = new URLSearchParams(window.location.search).get('id');
+            if(orderId) {
+                fetchStatus();
+                setInterval(fetchStatus, 10000); // Poll every 10s
+            }
+        }
+
+        async function fetchStatus() {
+            try {
+                const order = await ApiService.get(`/orders/${orderId}/`);
+                document.getElementById('t-id').innerText = `Order #${order.id.slice(0,8).toUpperCase()}`;
+
+                // Update Timeline
+                updateTimeline(order.status);
+
+                // Update Rider
+                if(['DISPATCHED', 'ON_WAY'].includes(order.status)) {
+                    document.getElementById('rider-info').classList.remove('d-none');
+                }
+
+                // Update Map
+                if(order.delivery_lat && order.delivery_lng) {
+                    const pos = { lat: parseFloat(order.delivery_lat), lng: parseFloat(order.delivery_lng) };
+                    marker.setPosition(pos);
+                    map.panTo(pos);
+                }
+            } catch(e) { console.error("Tracking Error", e); }
+        }
+
+        function updateTimeline(status) {
+            const stages = ['CONFIRMED', 'PACKED', 'DISPATCHED', 'DELIVERED'];
+            // Normalize backend status
+            let idx = -1;
+            const s = status.toUpperCase();
+            if(s === 'CONFIRMED') idx = 0;
+            if(s === 'PACKED') idx = 1;
+            if(s === 'DISPATCHED' || s === 'ON_WAY') idx = 2;
+            if(s === 'DELIVERED') idx = 3;
+
+            ['step-confirmed', 'step-packed', 'step-dispatched', 'step-delivered'].forEach((id, i) => {
+                const el = document.getElementById(id);
+                if(i <= idx) el.classList.add('active');
+            });
+        }
+    </script>
+</body>
+</html>

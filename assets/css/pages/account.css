@@ -1,0 +1,75 @@
+.account-layout {
+    display: flex;
+    gap: 30px;
+    min-height: 600px;
+}
+
+/* Sidebar */
+.account-sidebar {
+    width: 260px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid var(--border-color);
+    height: fit-content;
+}
+.user-profile-brief {
+    display: flex; align-items: center; gap: 15px;
+    padding-bottom: 20px; border-bottom: 1px solid #eee; margin-bottom: 20px;
+}
+.avatar-circle {
+    width: 50px; height: 50px; background: var(--primary-light);
+    color: var(--primary); font-weight: 700; font-size: 1.2rem;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+}
+.sidebar-link {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 15px; color: var(--text-muted);
+    border-radius: 8px; transition: 0.2s; margin-bottom: 5px;
+    font-weight: 500;
+}
+.sidebar-link:hover, .sidebar-link.active {
+    background: var(--primary-light); color: var(--primary);
+}
+.sidebar-link.logout { color: var(--danger); }
+.sidebar-link.logout:hover { background: #fee2e2; }
+
+/* Content Area */
+.account-content { flex: 1; }
+
+.stat-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px; margin-bottom: 30px;
+}
+.stat-card {
+    background: #fff; padding: 20px; border-radius: 12px;
+    border: 1px solid var(--border-color); display: flex; align-items: center; gap: 15px;
+}
+.icon-box {
+    width: 50px; height: 50px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+}
+.bg-green { background: #e6f7ef; color: var(--primary); }
+.bg-blue { background: #e0f2fe; color: #0284c7; }
+
+/* Order Cards */
+.order-card {
+    background: #fff; border: 1px solid var(--border-color);
+    border-radius: 12px; padding: 20px; margin-bottom: 15px;
+    display: flex; justify-content: space-between; align-items: center;
+    transition: 0.2s;
+}
+.order-card:hover { border-color: var(--primary); }
+
+.status-badge {
+    padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase;
+}
+.status-pending { background: #fff7ed; color: #c2410c; }
+.status-confirmed { background: #e0f2fe; color: #0284c7; }
+.status-delivered { background: #f0fdf4; color: #15803d; }
+.status-cancelled { background: #fef2f2; color: #b91c1c; }
+
+@media (max-width: 768px) {
+    .account-layout { flex-direction: column; }
+    .account-sidebar { width: 100%; }
+}

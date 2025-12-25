@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickDash - Groceries in Minutes</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    <link rel="stylesheet" href="/assets/css/pages/home.css">
+</head>
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <main>
+        <div class="container">
+            <div id="hero-slider" class="hero-slider skeleton" style="height: 250px; border-radius:16px;">
+                </div>
+        </div>
+
+        <div class="container mt-4">
+            <div class="features-grid">
+                <div class="feature-box">
+                    <i class="fas fa-shipping-fast"></i> <span>10 min Delivery</span>
+                </div>
+                <div class="feature-box">
+                    <i class="fas fa-shield-alt"></i> <span>Best Quality</span>
+                </div>
+                <div class="feature-box">
+                    <i class="fas fa-percentage"></i> <span>Great Discounts</span>
+                </div>
+            </div>
+        </div>
+
+        <section class="container mt-4">
+            <div class="section-head">
+                <h3>Shop by Category</h3>
+                <a href="/category.html" class="text-primary">See All</a>
+            </div>
+            <div id="category-grid" class="category-scroll">
+                <div class="skeleton" style="width:100px; height:120px;"></div>
+                <div class="skeleton" style="width:100px; height:120px;"></div>
+                <div class="skeleton" style="width:100px; height:120px;"></div>
+                <div class="skeleton" style="width:100px; height:120px;"></div>
+            </div>
+        </section>
+
+        <div id="feed-container" class="container mt-4">
+            </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/assets/js/config.js"></script>
+    <script src="/assets/js/utils/formatters.js"></script>
+    <script src="/assets/js/utils/toast.js"></script>
+    <script src="/assets/js/services/api.service.js"></script>
+    <script src="/assets/js/layout/main-layout.js"></script>
+    
+    <script src="/assets/js/pages/home.js"></script>
+</body>
+</html>

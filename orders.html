@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders - QuickDash</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    <link rel="stylesheet" href="/assets/css/pages/account.css">
+</head>
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <main class="container">
+        <div class="account-layout">
+            <aside class="account-sidebar">
+                <nav>
+                    <a href="/profile.html" class="sidebar-link"><i class="fas fa-th-large"></i> Dashboard</a>
+                    <a href="/orders.html" class="sidebar-link active"><i class="fas fa-box"></i> My Orders</a>
+                    <a href="/addresses.html" class="sidebar-link"><i class="fas fa-map-marker-alt"></i> Addresses</a>
+                    <button onclick="logout()" class="sidebar-link logout w-100 border-0 bg-transparent text-left">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </nav>
+            </aside>
+
+            <div class="account-content">
+                <h2 class="mb-4">My Orders</h2>
+                <div id="orders-list">
+                    <div class="loader-spinner"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/assets/js/config.js"></script>
+    <script src="/assets/js/utils/formatters.js"></script>
+    <script src="/assets/js/services/api.service.js"></script>
+    <script src="/assets/js/layout/main-layout.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const container = document.getElementById('orders-list');
+            try {
+                const res = await ApiService.get('/orders/my/');
+                const orders = res.results || res;
+
+                if (orders.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-5">
+                            <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                            <p>No orders found.</p>
+                            <a href="/index.html" class="btn btn-primary mt-2">Start Shopping</a>
+                        </div>`;
+                    return;
+                }
+
+                container.innerHTML = orders.map(o => `
+                    <div class="order-card">
+                        <div>
+                            <div class="d-flex align-center gap-2">
+                                <strong>Order #${o.id.slice(0,8).toUpperCase()}</strong>
+                                <span class="status-badge status-${o.status.toLowerCase()}">${o.status}</span>
+                            </div>
+                            <p class="text-muted small mt-1">
+                                ${Formatters.date(o.created_at)} • ${o.item_count || 'Items'} Items
+                            </p>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-weight-bold mb-2">${Formatters.currency(o.final_amount)}</div>
+                            <a href="/order_detail.html?id=${o.id}" class="btn btn-sm btn-outline-primary">View Details</a>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                container.innerHTML = '<p class="text-danger">Failed to load orders.</p>';
+            }
+        });
+    </script>
+</body>
+</html>

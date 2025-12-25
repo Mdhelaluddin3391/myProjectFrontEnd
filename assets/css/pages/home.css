@@ -1,0 +1,77 @@
+.hero-slider {
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 20px;
+    background-color: #eee;
+}
+.hero-slide {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    border-radius: 16px;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    background: #fff;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+}
+.feature-box {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    font-size: 0.85rem; font-weight: 600; color: var(--secondary);
+}
+.feature-box i { color: var(--primary); font-size: 1.2rem; }
+
+.section-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 15px;
+}
+.section-head h3 { font-size: 1.2rem; font-weight: 700; }
+
+.category-scroll {
+    display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px;
+    scrollbar-width: none;
+}
+.category-scroll::-webkit-scrollbar { display: none; }
+
+.cat-card {
+    min-width: 100px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.cat-card:hover { transform: translateY(-5px); }
+.cat-img-box {
+    width: 80px; height: 80px; background: #e6f7ef; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 8px;
+}
+.cat-img-box img { width: 50%; }
+.cat-name { font-size: 0.85rem; font-weight: 500; }
+
+/* Product Grid (for Feed) */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+}
+.product-card {
+    background: #fff; padding: 15px; border-radius: 12px;
+    border: 1px solid var(--border-color);
+    position: relative;
+    transition: box-shadow 0.2s;
+}
+.product-card:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+.p-img { width: 100%; height: 140px; object-fit: contain; margin-bottom: 10px; }
+.p-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 5px; height: 40px; overflow: hidden; }
+.p-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+.p-price { font-weight: 700; color: var(--text-main); }
+.btn-add {
+    background: #fff; border: 1px solid var(--primary);
+    color: var(--primary); padding: 5px 15px; border-radius: 4px;
+    font-weight: 600; text-transform: uppercase; font-size: 0.8rem;
+}
+.btn-add:hover { background: var(--primary); color: #fff; }
