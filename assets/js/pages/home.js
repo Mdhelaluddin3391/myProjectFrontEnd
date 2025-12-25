@@ -8,24 +8,40 @@ async function loadBanners() {
     try {
         const res = await ApiService.get('/catalog/banners/');
         const banners = res.results || res;
-
-        // Filter for HERO position
         const heroBanners = banners.filter(b => b.position === 'HERO');
         
         if (heroBanners.length > 0) {
             container.classList.remove('skeleton');
-            // Simplified: Just showing first banner for now, slider logic can be added
-            const b = heroBanners[0];
-            container.innerHTML = `
-                <a href="${b.target_url || '#'}">
-                    <img src="${b.image_url}" class="hero-slide" alt="${b.title}">
-                </a>
-            `;
+            
+            // Start Slider Logic
+            let currentIndex = 0;
+            
+            const renderBanner = () => {
+                const b = heroBanners[currentIndex];
+                container.innerHTML = `
+                    <a href="${b.target_url || '#'}" style="display:block; width:100%; height:100%; animation: fadeEffect 1s;">
+                        <img src="${b.image_url}" class="hero-slide" style="width:100%; height:100%; object-fit:cover; border-radius:16px;" alt="${b.title}">
+                    </a>
+                `;
+            };
+
+            // Initial Render
+            renderBanner();
+
+            // Auto Slide every 4 seconds if more than 1 banner
+            if(heroBanners.length > 1) {
+                setInterval(() => {
+                    currentIndex = (currentIndex + 1) % heroBanners.length;
+                    renderBanner();
+                }, 4000);
+            }
+            
         } else {
             container.style.display = 'none';
         }
     } catch (e) {
-        container.innerHTML = '<p class="text-center text-muted p-4">Failed to load offers</p>';
+        console.warn("Banner load failed", e);
+        container.innerHTML = '<p class="text-center text-muted p-4">Welcome to QuickDash</p>';
     }
 }
 
@@ -35,7 +51,10 @@ async function loadCategories() {
         const res = await ApiService.get('/catalog/categories/?page_size=10');
         const cats = res.results || res;
 
-        container.innerHTML = cats.map(c => `
+        // Filter parents only
+        const parents = cats.filter(c => !c.parent);
+
+        container.innerHTML = parents.map(c => `
             <div class="cat-card" onclick="window.location.href='/search_results.html?slug=${c.slug}'">
                 <div class="cat-img-box">
                     <img src="${c.icon_url || 'https://via.placeholder.com/50'}" alt="${c.name}">
@@ -51,10 +70,10 @@ async function loadCategories() {
 async function loadFeed() {
     const container = document.getElementById('feed-container');
     try {
-        // Assuming there is a home feed endpoint, or we fetch generic products
-        // Using the logic found in old code: /catalog/api/home/feed/
         const res = await ApiService.get('/catalog/api/home/feed/');
         const sections = res.sections || [];
+
+        if(sections.length === 0) throw new Error("No sections");
 
         container.innerHTML = sections.map(sec => `
             <div class="mb-4">
@@ -68,7 +87,6 @@ async function loadFeed() {
         `).join('');
 
     } catch (e) {
-        // Fallback if feed API fails, load generic products
         loadGenericProducts(container);
     }
 }
@@ -76,7 +94,7 @@ async function loadFeed() {
 function createProductCard(p) {
     return `
         <div class="product-card">
-            <a href="/product.html?code=${p.sku_code || p.id}" style="display:block">
+            <a href="/product.html?code=${p.sku_code || p.id}" style="display:block; text-decoration:none; color:inherit;">
                 <img src="${p.image || p.image_url || 'https://via.placeholder.com/150'}" class="p-img">
                 <div class="p-title">${p.name}</div>
                 <div class="text-muted small">${p.unit}</div>
@@ -103,9 +121,7 @@ async function loadGenericProducts(container) {
     } catch(e) {}
 }
 
-// Add to Cart Logic
 window.addToCart = async function(skuId, btn) {
-    // Check Auth
     if (!localStorage.getItem(APP_CONFIG.STORAGE_KEYS.TOKEN)) {
         Toast.warning("Please login to add items");
         setTimeout(() => window.location.href = APP_CONFIG.ROUTES.LOGIN, 1000);
@@ -117,16 +133,11 @@ window.addToCart = async function(skuId, btn) {
     btn.disabled = true;
 
     try {
-        await ApiService.post('/orders/cart/add/', { sku_id: skuId, quantity: 1 });
+        await CartService.addItem(skuId, 1);
         Toast.success("Added to cart");
         btn.innerText = "✔";
         btn.style.background = "var(--primary)";
         btn.style.color = "#fff";
-        
-        // Update global cart badge
-        // (Assuming main-layout.js exposes or re-runs updateCartCount)
-        if(window.updateGlobalCartCount) window.updateGlobalCartCount(); // Legacy hook support or reload
-        else location.reload(); // Simple fallback
         
     } catch (e) {
         Toast.error(e.message || "Failed to add");

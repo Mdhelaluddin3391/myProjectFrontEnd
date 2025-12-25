@@ -18,29 +18,35 @@ class CartService {
 
     static async updateItem(skuId, quantity) {
         // Re-using add endpoint as per backend logic (often add/update are same or similar)
-        // If your backend distinguishes, change to PUT/PATCH
         return await this.addItem(skuId, quantity);
     }
 
     static async removeItem(skuId) {
-        // Sending 0 usually removes item, or specific delete endpoint
+        // Sending 0 usually removes item
         return await this.addItem(skuId, 0); 
     }
 
     static async updateGlobalCount() {
         const badge = document.getElementById('cart-badge');
-        if (!badge) return;
-
+        
+        // Agar user login nahi hai
         if (!localStorage.getItem(APP_CONFIG.STORAGE_KEYS.TOKEN)) {
-            badge.style.display = 'none';
+            if(badge) badge.style.display = 'none';
             return;
         }
 
         try {
             const cart = await this.getCart();
             const count = cart.items ? cart.items.length : 0;
-            badge.innerText = count;
-            badge.style.display = count > 0 ? 'flex' : 'none';
+            
+            if(badge) {
+                badge.innerText = count;
+                badge.style.display = count > 0 ? 'flex' : 'none';
+            }
+
+            // NEW: Dispatch event to notify entire app
+            window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: count } }));
+
         } catch (e) {
             console.warn("Failed to sync cart count");
         }

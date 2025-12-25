@@ -28,6 +28,16 @@ function initializeGlobalEvents() {
     updateAuthUI();
     updateCartCount();
     highlightActiveLink();
+
+    // NEW: Listen for Cart Updates from any page
+    window.addEventListener('cart-updated', (event) => {
+        const badge = document.getElementById('cart-badge');
+        if (badge) {
+            const count = event.detail.count;
+            badge.innerText = count;
+            badge.style.display = count > 0 ? 'flex' : 'none';
+        }
+    });
 }
 
 function updateAuthUI() {
@@ -50,27 +60,9 @@ function updateAuthUI() {
 }
 
 async function updateCartCount() {
-    const badge = document.getElementById('cart-badge');
-    if (!badge) return;
-
-    // Only fetch if logged in
-    if (!localStorage.getItem(APP_CONFIG.STORAGE_KEYS.TOKEN)) {
-        badge.style.display = 'none';
-        return;
-    }
-
-    try {
-        const res = await ApiService.get('/orders/cart/');
-        const count = res.items ? res.items.length : 0;
-        
-        if (count > 0) {
-            badge.innerText = count;
-            badge.style.display = 'flex';
-        } else {
-            badge.style.display = 'none';
-        }
-    } catch (e) {
-        console.warn("Cart count fetch failed", e);
+    // Initial load check
+    if(window.CartService) {
+        await CartService.updateGlobalCount();
     }
 }
 
@@ -85,7 +77,11 @@ function highlightActiveLink() {
 
 // Global Logout function
 window.logout = function() {
-    localStorage.clear();
-    window.location.href = APP_CONFIG.ROUTES.HOME;
-    Toast.info("Logged out successfully");
+    if(confirm("Are you sure you want to logout?")) {
+        localStorage.clear();
+        Toast.info("Logged out successfully");
+        setTimeout(() => {
+            window.location.href = APP_CONFIG.ROUTES.LOGIN; // Redirect to Login
+        }, 500);
+    }
 }

@@ -116,7 +116,8 @@ function handleRazorpay(rzpOrder, orderId, btn, originalText) {
     const user = JSON.parse(localStorage.getItem(APP_CONFIG.STORAGE_KEYS.USER) || '{}');
     
     const options = {
-        "key": "YOUR_TEST_KEY_HERE", // Replace with env variable in real app
+        // UPDATE: Use your actual Razorpay Key ID here
+        "key": "rzp_test_12345678abcdef", 
         "amount": rzpOrder.amount,
         "currency": "INR",
         "name": "QuickDash",

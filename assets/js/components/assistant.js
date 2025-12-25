@@ -10,27 +10,28 @@ class Assistant {
 
     static render() {
         const div = document.createElement('div');
+        // FIX: Removed <img> tag and used FontAwesome icon for reliability
         div.innerHTML = `
             <div id="ast-trigger" class="ast-btn">
-                <img src="/assets/img/robot_icon.png" alt="AI">
+                <i class="fas fa-robot" style="font-size: 1.8rem; color: #fff;"></i>
             </div>
 
             <div id="ast-window" class="ast-box">
                 <div class="ast-header">
                     <div class="d-flex align-center gap-2">
-                        <i class="fas fa-robot"></i> <strong>Assistant</strong>
+                        <i class="fas fa-robot"></i> <strong>QuickDash AI</strong>
                     </div>
                     <i class="fas fa-times" id="ast-close" style="cursor:pointer"></i>
                 </div>
                 
                 <div id="ast-messages" class="ast-body">
                     <div class="msg-bubble bot">
-                        Hi! I can help you find products or track orders. Try typing "Onions".
+                        Hi! I can help you find products or track orders. Try typing "Milk" or "Order Status".
                     </div>
                 </div>
 
                 <div class="ast-footer">
-                    <input type="text" id="ast-input" placeholder="Ask me anything...">
+                    <input type="text" id="ast-input" placeholder="Ask me anything..." autocomplete="off">
                     <button id="ast-send"><i class="fas fa-paper-plane"></i></button>
                 </div>
             </div>
@@ -44,6 +45,8 @@ class Assistant {
         const close = document.getElementById('ast-close');
         const send = document.getElementById('ast-send');
         const input = document.getElementById('ast-input');
+
+        if(!trigger) return;
 
         // Toggle
         trigger.onclick = () => {
@@ -66,25 +69,23 @@ class Assistant {
             input.value = '';
 
             try {
-                // Simulate typing
                 this.addTyping();
                 
                 // Call Backend
-                // Endpoint assumed based on file analysis: /catalog/assistant/chat/
                 const res = await ApiService.post('/catalog/assistant/chat/', { message: text });
                 
                 this.removeTyping();
                 this.addMessage(res.reply || "I didn't understand that.", 'bot');
 
-                // If backend supports actions (e.g. adding to cart via chat)
                 if (res.action === 'cart_updated') {
-                    if (window.CartService) CartService.updateGlobalCount();
-                    Toast.success("Cart updated by Assistant!");
+                    // Trigger global event update
+                    if(window.CartService) CartService.updateGlobalCount();
+                    Toast.success("Cart updated!");
                 }
 
             } catch (e) {
                 this.removeTyping();
-                this.addMessage("Sorry, I'm having trouble connecting.", 'bot');
+                this.addMessage("Sorry, I'm having trouble connecting to the server.", 'bot');
             }
         };
 
@@ -119,7 +120,6 @@ class Assistant {
 
 // Auto-init
 document.addEventListener('DOMContentLoaded', () => {
-    // Only init if robot icon exists or if we want it globally
-    // We used a placeholder image path, ensure it exists or use font awesome
+    // Adding a small delay to ensure CSS loads
     setTimeout(() => Assistant.init(), 1000); 
 });

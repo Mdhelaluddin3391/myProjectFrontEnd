@@ -16,21 +16,32 @@
                 ✓
             </div>
             <h1 class="mb-2">Order Placed Successfully!</h1>
+            
+            <h4 id="display-order-id" class="text-primary mb-3"></h4>
+            
             <p class="text-muted mb-4">Thank you for your purchase. Your order has been received.</p>
             
             <div class="d-flex justify-center gap-3" style="justify-content: center; gap: 15px;">
-                <a href="/orders.html" class="btn btn-primary">View Orders</a>
+                <a href="/orders.html" class="btn btn-primary">View My Orders</a>
                 <a href="/index.html" class="btn btn-outline">Continue Shopping</a>
             </div>
         </div>
     </main>
 
     <div id="footer-placeholder"></div>
-    <script src="/assets/js/layout.js"></script>
+    <script src="/assets/js/layout/main-layout.js"></script>
+    
     <script>
-        // Simple redirect to components loading
         document.addEventListener("DOMContentLoaded", () => {
-             // Optional: Extract order ID from URL if needed for tracking link
+             // Logic to extract Order ID from URL (?order_id=123)
+             const params = new URLSearchParams(window.location.search);
+             const orderId = params.get('order_id');
+             
+             if(orderId) {
+                 // Display simplified Order ID (e.g., first 8 chars)
+                 const displayId = orderId.length > 8 ? orderId.substring(0, 8).toUpperCase() : orderId;
+                 document.getElementById('display-order-id').innerText = `Order #${displayId}`;
+             }
         });
     </script>
 </body>
