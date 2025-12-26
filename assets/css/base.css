@@ -19,7 +19,7 @@
     --warning: #f59e0b;
     
     /* Layout Variables */
-    --container-width: 1200px; /* Modern wide layout */
+    --container-width: 100%; /* Modern wide layout */
     --header-height: 70px;
     --radius: 12px;
     --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
