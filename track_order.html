@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Track Order - QuickDash</title>
-    
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/assets/css/base.css">
     <link rel="stylesheet" href="/assets/css/components.css">
     <link rel="stylesheet" href="/assets/css/layout.css">
     <link rel="stylesheet" href="/assets/css/track_order_style.css">
 </head>
+
 <body>
     <div id="navbar-placeholder"></div>
 
@@ -62,74 +64,67 @@
             </div>
 
             <div class="track-map-container">
-                <div id="map" style="width: 100%; height: 100%; background: #eee; display: flex; align-items: center; justify-content: center; color: #777;">
+                <div id="map"
+                    style="width: 100%; height: 100%; background: #eee; display: flex; align-items: center; justify-content: center; color: #777;">
                     Map Loading...
                 </div>
             </div>
         </div>
     </main>
 
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_REAL_GOOGLE_API_KEY_HERE&callback=initMap" async defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_REAL_GOOGLE_API_KEY_HERE&callback=initMap" async
+        defer></script>
     <script src="/assets/js/config.js"></script>
     <script src="/assets/js/services/api.service.js"></script>
     <script src="/assets/js/layout/main-layout.js"></script>
-    
+
     <script>
-        let map, marker, orderId;
-        
-        window.initMap = function() {
+        let map, marker, orderId, socket;;
+
+        window.initMap = function () {
             map = new google.maps.Map(document.getElementById('map'), {
                 center: { lat: 12.9716, lng: 77.5946 },
                 zoom: 14,
                 disableDefaultUI: true
             });
             marker = new google.maps.Marker({ map: map });
-            
+
             // Start Tracking
             orderId = new URLSearchParams(window.location.search).get('id');
-            if(orderId) {
+            if (orderId) {
                 fetchStatus();
                 setInterval(fetchStatus, 10000); // Poll every 10s
             }
         }
 
-        async function fetchStatus() {
-            try {
-                const order = await ApiService.get(`/orders/${orderId}/`);
-                document.getElementById('t-id').innerText = `Order #${order.id.slice(0,8).toUpperCase()}`;
+        function connectTrackingSocket(orderId) {
+            // 1. Get a one-time ticket for secure WS auth
+            ApiService.post('/auth/ws/ticket/').then(res => {
+                const ticket = res.ticket;
+                // 2. Connect to the modern WebSocket route
+                socket = new WebSocket(`ws://${window.location.host}/ws/orders/${orderId}/?ticket=${ticket}`);
 
-                // Update Timeline
-                updateTimeline(order.status);
-
-                // Update Rider
-                if(['DISPATCHED', 'ON_WAY'].includes(order.status)) {
-                    document.getElementById('rider-info').classList.remove('d-none');
-                }
-
-                // Update Map
-                if(order.delivery_lat && order.delivery_lng) {
-                    const pos = { lat: parseFloat(order.delivery_lat), lng: parseFloat(order.delivery_lng) };
-                    marker.setPosition(pos);
-                    map.panTo(pos);
-                }
-            } catch(e) { console.error("Tracking Error", e); }
+                socket.onmessage = (e) => {
+                    const data = JSON.parse(e.data);
+                    if (data.type === 'rider_location') {
+                        // MODERN: Move rider marker smoothly on the map
+                        updateRiderMarker(data.lat, data.lng);
+                    } else if (data.type === 'status_update') {
+                        // Live status changes (e.g. Out for delivery)
+                        updateTimeline(data.status);
+                    }
+                };
+            });
         }
 
-        function updateTimeline(status) {
-            const stages = ['CONFIRMED', 'PACKED', 'DISPATCHED', 'DELIVERED'];
-            // Normalize backend status
-            let idx = -1;
-            const s = status.toUpperCase();
-            if(s === 'CONFIRMED') idx = 0;
-            if(s === 'PACKED') idx = 1;
-            if(s === 'DISPATCHED' || s === 'ON_WAY') idx = 2;
-            if(s === 'DELIVERED') idx = 3;
-
-            ['step-confirmed', 'step-packed', 'step-dispatched', 'step-delivered'].forEach((id, i) => {
-                const el = document.getElementById(id);
-                if(i <= idx) el.classList.add('active');
-            });
+        function updateRiderMarker(lat, lng) {
+            const pos = { lat: parseFloat(lat), lng: parseFloat(lng) };
+            if (marker) {
+                marker.setPosition(pos);
+                map.panTo(pos);
+            }
         }
     </script>
 </body>
+
 </html>

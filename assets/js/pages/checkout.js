@@ -49,7 +49,7 @@ async function loadAddresses() {
 async function loadSummary() {
     try {
         const cart = await ApiService.get('/orders/cart/');
-        
+
         if (!cart.items || cart.items.length === 0) {
             window.location.href = '/cart.html';
             return;
@@ -64,19 +64,19 @@ async function loadSummary() {
 
         document.getElementById('summ-subtotal').innerText = Formatters.currency(cart.total_amount);
         document.getElementById('summ-total').innerText = Formatters.currency(cart.total_amount); // Add delivery logic if needed
-        
+
     } catch (e) {
         console.error(e);
     }
 }
 
-window.selectAddress = function(id, el) {
+window.selectAddress = function (id, el) {
     selectedAddressId = id;
     document.querySelectorAll('.address-card').forEach(c => c.classList.remove('active'));
     el.classList.add('active');
 }
 
-window.selectPayment = function(method, el) {
+window.selectPayment = function (method, el) {
     paymentMethod = method;
     document.querySelectorAll('.payment-option').forEach(c => c.classList.remove('selected'));
     el.classList.add('selected');
@@ -114,10 +114,11 @@ async function placeOrder() {
 
 function handleRazorpay(rzpOrder, orderId, btn, originalText) {
     const user = JSON.parse(localStorage.getItem(APP_CONFIG.STORAGE_KEYS.USER) || '{}');
-    
+
     const options = {
         // UPDATE: Use your actual Razorpay Key ID here
-        "key": "rzp_test_12345678abcdef", 
+        "key": rzpOrder.key_id,
+
         "amount": rzpOrder.amount,
         "currency": "INR",
         "name": "QuickDash",
@@ -146,7 +147,7 @@ function handleRazorpay(rzpOrder, orderId, btn, originalText) {
     };
 
     const rzp = new Razorpay(options);
-    rzp.on('payment.failed', function (response){
+    rzp.on('payment.failed', function (response) {
         Toast.error("Payment Failed: " + response.error.description);
         btn.disabled = false;
         btn.innerText = originalText;
@@ -161,12 +162,12 @@ window.closeAddressModal = () => document.getElementById('address-modal').classL
 async function saveAddress(e) {
     e.preventDefault();
     const payload = {
-        full_address: document.getElementById('addr-text').value,
-        city: document.getElementById('addr-city').value,
-        pincode: document.getElementById('addr-pin').value,
-        address_type: document.getElementById('addr-type').value,
-        lat: document.getElementById('addr-lat').value,
-        lng: document.getElementById('addr-lng').value
+        address_line: document.getElementById('a-text').value, // was full_address
+        label: document.querySelector('input[name="atype"]:checked').value, // was address_type
+        city: document.getElementById('a-city').value,
+        pincode: document.getElementById('a-pin').value,
+        latitude: document.getElementById('a-lat').value, // was lat
+        longitude: document.getElementById('a-lng').value // was lng
     };
 
     try {

@@ -3,6 +3,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const query = params.get('q');
     const slug = params.get('slug');
     const sort = document.getElementById('sort-select');
+    const searchParam = params.get('search');
+    if (slug) {
+        endpoint += `?category__slug=${slug}`;
+        title = capitalize(slug.replace(/-/g, ' '));
+    } else if (searchParam) {
+        endpoint += `?search=${encodeURIComponent(searchParam)}`;
+        title = `Search: "${searchParam}"`;
+    }
 
     let endpoint = '/catalog/skus/';
     let title = 'All Products';
@@ -25,14 +33,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.applySort = async () => {
         const sortVal = sort.value;
         let sortedEndpoint = endpoint;
-        
-        // Append sort param
         const separator = endpoint.includes('?') ? '&' : '?';
-        
-        // Backend sort mapping (Adjust keys based on your Django filters)
-        if(sortVal === 'price_asc') sortedEndpoint += `${separator}ordering=sale_price`;
-        if(sortVal === 'price_desc') sortedEndpoint += `${separator}ordering=-sale_price`;
-        if(sortVal === 'newest') sortedEndpoint += `${separator}ordering=-created_at`;
+
+        // FIX: Backend field names ke saath map karein
+        let backendSortKey = '';
+        if (sortVal === 'price_asc') backendSortKey = 'effective_price';
+        if (sortVal === 'price_desc') backendSortKey = '-effective_price';
+        if (sortVal === 'newest') backendSortKey = '-created_at';
+
+        if (backendSortKey) {
+            sortedEndpoint += `${separator}ordering=${backendSortKey}`;
+        }
 
         await loadProducts(sortedEndpoint);
     };
@@ -42,7 +53,7 @@ async function loadProducts(url) {
     const grid = document.getElementById('product-list');
     const empty = document.getElementById('empty-state');
     const count = document.getElementById('result-count');
-    
+
     grid.innerHTML = '<div class="loader-spinner"></div>';
     empty.classList.add('d-none');
 
@@ -87,7 +98,7 @@ async function loadProducts(url) {
     }
 }
 
-window.addToCart = async function(e, skuId, btn) {
+window.addToCart = async function (e, skuId, btn) {
     e.preventDefault(); // Prevent navigation
     e.stopPropagation();
 

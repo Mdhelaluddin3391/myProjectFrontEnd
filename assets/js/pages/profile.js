@@ -93,7 +93,7 @@ async function updateProfile(e) {
     };
 
     try {
-        const updatedUser = await ApiService.patch('/auth/me/', payload);
+        const updatedUser = await ApiService.patch('/auth/customer/me/', payload);
         localStorage.setItem(APP_CONFIG.STORAGE_KEYS.USER, JSON.stringify(updatedUser));
         renderUserInfo(updatedUser);
         Toast.success("Profile Updated");
