@@ -19,7 +19,7 @@
     --warning: #f39c12;
     
     /* Spacing & Layout */
-    --container-width: 1200px;
+    --container-width: 100%;
     --header-height: 70px;
     --radius: 12px;
     --shadow: 0 4px 15px rgba(0,0,0,0.05);
