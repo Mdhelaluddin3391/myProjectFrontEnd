@@ -1,77 +1,176 @@
-.hero-slider {
-    position: relative;
-    overflow: hidden;
-    margin-bottom: 20px;
-    background-color: #eee;
-}
-.hero-slide {
-    width: 100%; height: 100%;
-    object-fit: cover;
-    border-radius: 16px;
-}
+/* assets/css/pages/home.css */
 
-.features-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
+/* --- Hero Section --- */
+.hero-wrapper {
+    padding: 15px 0;
     background: #fff;
-    padding: 15px;
-    border-radius: 12px;
-    box-shadow: var(--shadow);
+    margin-bottom: 10px;
 }
-.feature-box {
-    display: flex; flex-direction: column; align-items: center; gap: 5px;
-    font-size: 0.85rem; font-weight: 600; color: var(--secondary);
-}
-.feature-box i { color: var(--primary); font-size: 1.2rem; }
 
-.section-head {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 15px;
+.hero-slider {
+    display: flex;
+    gap: 15px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none; /* Firefox */
+    padding: 0 20px 10px 20px;
 }
-.section-head h3 { font-size: 1.2rem; font-weight: 700; }
+.hero-slider::-webkit-scrollbar { display: none; }
 
-.category-scroll {
-    display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px;
-    scrollbar-width: none;
-}
-.category-scroll::-webkit-scrollbar { display: none; }
-
-.cat-card {
-    min-width: 100px;
-    text-align: center;
-    cursor: pointer;
+.hero-slide {
+    flex: 0 0 90%; /* Thoda sa next slide dikhega */
+    height: 180px;
+    border-radius: 16px;
+    scroll-snap-align: center;
+    object-fit: cover;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
     transition: transform 0.2s;
 }
-.cat-card:hover { transform: translateY(-5px); }
-.cat-img-box {
-    width: 80px; height: 80px; background: #e6f7ef; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    margin: 0 auto 8px;
-}
-.cat-img-box img { width: 50%; }
-.cat-name { font-size: 0.85rem; font-weight: 500; }
 
-/* Product Grid (for Feed) */
-.product-grid {
+/* --- Features Grid --- */
+.features-bar {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 20px;
+    background: #f9fcf9;
+    border-bottom: 1px solid #f0f0f0;
+    margin-bottom: 20px;
+}
+.feature-item {
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.feature-item i { color: var(--primary); }
+
+/* --- Categories (Horizontal Scroll) --- */
+.category-scroll-section {
+    padding: 0 20px;
+    margin-bottom: 30px;
+}
+.section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+.section-head h3 { font-size: 1.2rem; font-weight: 700; color: var(--text-main); }
+.section-head a { font-size: 0.9rem; font-weight: 600; color: var(--primary); }
+
+.category-scroll {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(4, 1fr); /* 2 lines of 4 items similar to QuickDash */
+    gap: 15px 10px;
 }
-.product-card {
-    background: #fff; padding: 15px; border-radius: 12px;
-    border: 1px solid var(--border-color);
+.cat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+}
+.cat-img-box {
+    width: 70px;
+    height: 70px;
+    background: #e6f7ef;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+    transition: transform 0.2s;
+}
+.cat-card:hover .cat-img-box { transform: scale(1.05); background: #d1fae5; }
+.cat-img-box img { width: 40px; height: 40px; object-fit: contain; }
+.cat-name { font-size: 0.75rem; font-weight: 600; color: var(--text-main); }
+
+/* --- Flash Sales (New Feature) --- */
+.flash-sale-container {
+    background: linear-gradient(to right, #fff3e0, #ffffff);
+    padding: 20px;
+    border-top: 1px solid #ffe0b2;
+    border-bottom: 1px solid #ffe0b2;
+    margin-bottom: 30px;
+}
+.flash-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+.flash-title { display: flex; align-items: center; gap: 8px; color: #e67e22; }
+.flash-timer { font-weight: 700; color: #d35400; font-family: monospace; font-size: 1rem; }
+
+.flash-grid {
+    display: flex;
+    gap: 15px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 5px;
+}
+.flash-card {
+    flex: 0 0 160px;
+    background: #fff;
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid #eee;
     position: relative;
-    transition: box-shadow 0.2s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
-.product-card:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-.p-img { width: 100%; height: 140px; object-fit: contain; margin-bottom: 10px; }
-.p-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 5px; height: 40px; overflow: hidden; }
-.p-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
-.p-price { font-weight: 700; color: var(--text-main); }
-.btn-add {
-    background: #fff; border: 1px solid var(--primary);
-    color: var(--primary); padding: 5px 15px; border-radius: 4px;
-    font-weight: 600; text-transform: uppercase; font-size: 0.8rem;
+.badge-off {
+    position: absolute;
+    top: 0; left: 0;
+    background: #ff6b6b;
+    color: #fff;
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 10px 0 10px 0;
+    font-weight: 700;
 }
-.btn-add:hover { background: var(--primary); color: #fff; }
+.f-price-box { margin-top: 5px; font-weight: 700; color: var(--text-main); display: flex; align-items: baseline; gap: 5px; }
+.f-mrp { text-decoration: line-through; color: #999; font-size: 0.8rem; font-weight: 400; }
+
+/* --- Brand Scroller (New Feature) --- */
+.brand-scroller {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    padding: 0 20px 20px;
+    scrollbar-width: none;
+}
+.brand-circle {
+    flex: 0 0 70px;
+    height: 70px;
+    border-radius: 50%;
+    border: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    transition: transform 0.2s;
+}
+.brand-circle:hover { transform: translateY(-3px); border-color: var(--primary); }
+.brand-circle img { width: 45px; object-fit: contain; }
+
+/* --- Product Shelves (Horizontal Scrolling Feed) --- */
+.feed-section {
+    background: #fff;
+    padding: 15px 0;
+    margin-bottom: 10px;
+    border-top: 1px solid #f8f9fa;
+}
+.product-scroll-wrapper {
+    display: flex;
+    gap: 15px;
+    overflow-x: auto;
+    padding: 0 20px;
+    scrollbar-width: none;
+}
+/* Reusing standard product card styles from components.css, ensuring they fit in scroll */
+.product-scroll-wrapper .product-card {
+    flex: 0 0 180px; /* Fixed width for horizontal scroll items */
+}

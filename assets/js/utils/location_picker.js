@@ -1,48 +1,79 @@
+/* assets/js/utils/location_picker.js */
+
 const LocationPicker = {
-    modal: null,
+    state: { lat: 12.9716, lng: 77.5946, address: '', pincode: '' },
     map: null,
-    marker: null,
     callback: null,
-    
+
     init() {
         this.injectModal();
+        this.checkInitialLocation();
     },
 
     injectModal() {
+        if(document.getElementById('location-modal')) return;
+
         const div = document.createElement('div');
-        div.id = 'loc-picker-modal';
-        div.className = 'modal-overlay d-none';
+        div.id = 'location-modal';
+        div.className = 'location-modal';
         div.innerHTML = `
-            <div class="modal-box" style="max-width:500px; width:95%; padding:0; overflow:hidden;">
-                <div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
-                    <h3 class="m-0">Set Location</h3>
-                    <button onclick="LocationPicker.close()" class="border-0 bg-transparent" style="font-size:1.5rem;">&times;</button>
+            <div class="modal-content-map">
+                <div class="map-header">
+                    <h3 style="margin:0; font-size:1.1rem;">Set Delivery Location</h3>
+                    <button id="close-map" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
                 </div>
-                <div id="picker-map" style="height:300px; background:#eee;"></div>
-                <div style="padding:20px;">
-                    <p id="picker-address" class="text-muted small mb-3">Detecting...</p>
-                    <button id="picker-confirm" class="btn btn-primary w-100" disabled>Confirm Location</button>
+                
+                <div class="map-wrapper">
+                    <div id="picker-map" style="width:100%; height:100%;"></div>
+                    <div class="center-pin">
+                        <i class="fas fa-map-marker-alt pin-icon"></i>
+                        <div class="pin-shadow"></div>
+                    </div>
+                    <button id="gps-trigger" class="gps-btn" title="Use My Location">
+                        <i class="fas fa-crosshairs"></i>
+                    </button>
+                </div>
+
+                <div class="loc-footer">
+                    <h4 id="loc-title" style="margin:0 0 5px; color:var(--text-main);">Detecting...</h4>
+                    <p id="loc-desc" style="font-size:0.85rem; color:var(--text-muted); margin-bottom:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        Move map to adjust
+                    </p>
+                    <button id="btn-confirm-loc" class="btn btn-primary w-100" disabled>
+                        Confirm Location
+                    </button>
                 </div>
             </div>
         `;
         document.body.appendChild(div);
-        
-        // Load Leaflet CSS if not present
-        if(!document.querySelector('link[href*="leaflet"]')) {
-            const link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-            document.head.appendChild(link);
+
+        // Bind Events
+        document.getElementById('close-map').onclick = () => this.close();
+        document.getElementById('gps-trigger').onclick = () => this.triggerGPS();
+        document.getElementById('btn-confirm-loc').onclick = () => this.confirm();
+    },
+
+    checkInitialLocation() {
+        const saved = localStorage.getItem('user_address_text');
+        if(!saved && window.location.pathname === '/index.html') {
+            // Auto open on home if no location
+            setTimeout(() => this.open(), 1000);
         }
     },
 
-    open(onSelectCallback) {
+    open(onSelectCallback = null) {
         this.callback = onSelectCallback;
-        const modal = document.getElementById('loc-picker-modal');
-        modal.classList.remove('d-none');
-        
-        // Lazy load Leaflet JS
+        const modal = document.getElementById('location-modal');
+        modal.classList.add('active');
+        document.body.classList.add('location-mode-active');
+
+        // Lazy Load Leaflet
         if(typeof L === 'undefined') {
+            const css = document.createElement('link');
+            css.rel = 'stylesheet';
+            css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+            document.head.appendChild(css);
+
             const script = document.createElement('script');
             script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
             script.onload = () => this.initMap();
@@ -55,63 +86,96 @@ const LocationPicker = {
         }
     },
 
+    close() {
+        document.getElementById('location-modal').classList.remove('active');
+        document.body.classList.remove('location-mode-active');
+    },
+
     initMap() {
-        // Default: Bangalore
-        const defLat = 12.9716, defLng = 77.5946;
-        
-        this.map = L.map('picker-map').setView([defLat, defLng], 13);
+        // Default Bangalore
+        this.map = L.map('picker-map', { zoomControl: false }).setView([this.state.lat, this.state.lng], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
-        
-        // Center Marker Logic
-        const centerIcon = L.divIcon({
-            className: 'picker-center-marker',
-            html: '<i class="fas fa-map-marker-alt" style="font-size:2rem; color:#e74c3c; transform:translate(-50%, -100%);"></i>',
-            iconSize: [0, 0]
-        });
-        
-        const marker = L.marker(this.map.getCenter(), {icon: centerIcon}).addTo(this.map);
-        
+
         this.map.on('move', () => {
-            marker.setLatLng(this.map.getCenter());
-            document.getElementById('picker-confirm').disabled = true;
-            document.getElementById('picker-confirm').innerText = 'Moving...';
+            document.getElementById('btn-confirm-loc').innerText = "Locating...";
+            document.getElementById('btn-confirm-loc').disabled = true;
         });
 
-        this.map.on('moveend', async () => {
-            const center = this.map.getCenter();
-            await this.fetchAddress(center.lat, center.lng);
+        this.map.on('moveend', () => {
+            const c = this.map.getCenter();
+            this.fetchAddress(c.lat, c.lng);
         });
 
-        // Bind Confirm
-        document.getElementById('picker-confirm').onclick = () => {
-            const center = this.map.getCenter();
-            const addr = document.getElementById('picker-address').innerText;
-            if(this.callback) this.callback({ lat: center.lat, lng: center.lng, address: addr });
-            this.close();
-        };
+        // Initial fetch
+        this.fetchAddress(this.state.lat, this.state.lng);
+    },
 
-        // Trigger initial fetch
-        this.fetchAddress(defLat, defLng);
+    triggerGPS() {
+        if(!navigator.geolocation) return alert("GPS not supported");
+        navigator.geolocation.getCurrentPosition(
+            (pos) => this.map.flyTo([pos.coords.latitude, pos.coords.longitude], 16),
+            () => alert("Location access denied")
+        );
     },
 
     async fetchAddress(lat, lng) {
+        this.state.lat = lat;
+        this.state.lng = lng;
+
         try {
-            // Using OpenStreetMap Nominatim (Free)
             const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
             const data = await res.json();
-            document.getElementById('picker-address').innerText = data.display_name;
-            document.getElementById('picker-confirm').disabled = false;
-            document.getElementById('picker-confirm').innerText = 'Confirm Location';
+            const addr = data.address;
+            
+            // Format address nicely
+            const title = addr.suburb || addr.neighbourhood || addr.city || "Unknown Area";
+            const full = data.display_name;
+            const city = addr.city || addr.town || addr.state_district || "";
+            const pincode = addr.postcode || "";
+
+            this.state.address = full;
+            this.state.city = city;
+            this.state.pincode = pincode;
+
+            // Update UI
+            document.getElementById('loc-title').innerText = title;
+            document.getElementById('loc-desc').innerText = full;
+            
+            const btn = document.getElementById('btn-confirm-loc');
+            btn.disabled = false;
+            btn.innerText = "Confirm Location";
+
         } catch(e) {
-            document.getElementById('picker-address').innerText = "Location selected";
-            document.getElementById('picker-confirm').disabled = false;
+            document.getElementById('btn-confirm-loc').innerText = "Retry";
         }
     },
 
-    close() {
-        document.getElementById('loc-picker-modal').classList.add('d-none');
+    confirm() {
+        // Save to LocalStorage
+        localStorage.setItem('user_lat', this.state.lat);
+        localStorage.setItem('user_lng', this.state.lng);
+        localStorage.setItem('user_address_text', this.state.address); // For Navbar display
+        
+        // Update Navbar Immediately
+        const navLoc = document.getElementById('header-location');
+        if(navLoc) navLoc.innerText = document.getElementById('loc-title').innerText;
+
+        // If called for Checkout/Address page
+        if(this.callback) {
+            this.callback({
+                lat: this.state.lat,
+                lng: this.state.lng,
+                address_text: this.state.address,
+                city: this.state.city,
+                pincode: this.state.pincode
+            });
+        } else {
+            // Reload to apply location context (e.g. check serviceability)
+            window.location.reload();
+        }
+        this.close();
     }
 };
 
-// Initialize on load
+// Initialize
 document.addEventListener('DOMContentLoaded', () => LocationPicker.init());

@@ -10,45 +10,59 @@
     <link rel="stylesheet" href="/assets/css/components.css">
     <link rel="stylesheet" href="/assets/css/layout.css">
     <link rel="stylesheet" href="/assets/css/pages/home.css">
+    <link rel="stylesheet" href="/assets/css/assistant.css">
 </head>
 <body>
     <div id="navbar-placeholder"></div>
 
     <main>
-        <div class="container">
-            <div id="hero-slider" class="hero-slider skeleton" style="height: 250px; border-radius:16px;">
+        <div class="hero-wrapper">
+            <div id="hero-slider" class="hero-slider skeleton" style="min-height: 180px;">
                 </div>
         </div>
 
-        <div class="container mt-4">
-            <div class="features-grid">
-                <div class="feature-box">
-                    <i class="fas fa-shipping-fast"></i> <span>10 min Delivery</span>
-                </div>
-                <div class="feature-box">
-                    <i class="fas fa-shield-alt"></i> <span>Best Quality</span>
-                </div>
-                <div class="feature-box">
-                    <i class="fas fa-percentage"></i> <span>Great Discounts</span>
-                </div>
-            </div>
+        <div class="features-bar">
+            <div class="feature-item"><i class="fas fa-bolt"></i> 10 min Delivery</div>
+            <div class="feature-item"><i class="fas fa-award"></i> Best Quality</div>
+            <div class="feature-item"><i class="fas fa-tags"></i> Low Prices</div>
         </div>
 
-        <section class="container mt-4">
+        <section class="category-scroll-section">
             <div class="section-head">
-                <h3>Shop by Category</h3>
-                <a href="/category.html" class="text-primary">See All</a>
+                <h3>Explore Categories</h3>
+                <a href="/category.html">See All</a>
             </div>
             <div id="category-grid" class="category-scroll">
-                <div class="skeleton" style="width:100px; height:120px;"></div>
-                <div class="skeleton" style="width:100px; height:120px;"></div>
-                <div class="skeleton" style="width:100px; height:120px;"></div>
-                <div class="skeleton" style="width:100px; height:120px;"></div>
+                <div class="skeleton" style="height:80px; border-radius:18px;"></div>
+                <div class="skeleton" style="height:80px; border-radius:18px;"></div>
+                <div class="skeleton" style="height:80px; border-radius:18px;"></div>
+                <div class="skeleton" style="height:80px; border-radius:18px;"></div>
             </div>
         </section>
 
-        <div id="feed-container" class="container mt-4">
+        <section id="flash-sale-section" class="flash-sale-container" style="display: none;">
+            <div class="flash-header">
+                <div class="flash-title">
+                    <i class="fas fa-bolt"></i>
+                    <h3 class="m-0">Deal of the Day</h3>
+                </div>
+                <div id="flash-timer" class="flash-timer">00:00:00</div>
             </div>
+            <div id="flash-sale-grid" class="flash-grid">
+                </div>
+        </section>
+
+        <section class="mb-4">
+            <div class="section-head" style="padding: 0 20px;">
+                <h3>Top Brands</h3>
+            </div>
+            <div id="brand-scroller" class="brand-scroller">
+                </div>
+        </section>
+
+        <div id="feed-container" style="min-height: 300px;">
+            <div class="loader-spinner"></div>
+        </div>
     </main>
 
     <div id="footer-placeholder"></div>
@@ -57,8 +71,11 @@
     <script src="/assets/js/utils/formatters.js"></script>
     <script src="/assets/js/utils/toast.js"></script>
     <script src="/assets/js/services/api.service.js"></script>
+    <script src="/assets/js/services/cart.service.js"></script>
     <script src="/assets/js/layout/main-layout.js"></script>
     
     <script src="/assets/js/pages/home.js"></script>
+    
+    <script src="/assets/js/components/assistant.js"></script>
 </body>
 </html>
