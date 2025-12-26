@@ -89,20 +89,43 @@
 
 /* --- Flash Sales (New Feature) --- */
 .flash-sale-container {
-    background: linear-gradient(to right, #fff3e0, #ffffff);
+    /* Red Gradient Background */
+    background: linear-gradient(to right, #fee2e2, #fff1f2); 
     padding: 20px;
-    border-top: 1px solid #ffe0b2;
-    border-bottom: 1px solid #ffe0b2;
+    border-top: 1px solid #fecaca;
+    border-bottom: 1px solid #fecaca;
     margin-bottom: 30px;
 }
+
 .flash-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 15px;
 }
-.flash-title { display: flex; align-items: center; gap: 8px; color: #e67e22; }
-.flash-timer { font-weight: 700; color: #d35400; font-family: monospace; font-size: 1rem; }
+
+.flash-title { 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    color: #dc2626; /* Dark Red Title */
+    font-weight: 700;
+}
+
+.flash-title i {
+    color: #ef4444; /* Bright Red Icon */
+}
+
+.flash-timer { 
+    font-weight: 700; 
+    color: #b91c1c; /* Deep Red Timer */
+    font-family: monospace; 
+    font-size: 1.1rem; 
+    background: #fff;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid #fecaca;
+}
 
 .flash-grid {
     display: flex;
@@ -111,52 +134,48 @@
     scrollbar-width: none;
     padding-bottom: 5px;
 }
+
 .flash-card {
     flex: 0 0 160px;
     background: #fff;
     padding: 10px;
     border-radius: 12px;
-    border: 1px solid #eee;
+    border: 1px solid #ffe4e6; /* Light Red Border */
     position: relative;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 5px rgba(220, 38, 38, 0.05); /* Reddish Shadow */
 }
+
 .badge-off {
     position: absolute;
     top: 0; left: 0;
-    background: #ff6b6b;
+    background: #ef4444; /* Bright Red Badge */
     color: #fff;
     font-size: 0.65rem;
     padding: 2px 8px;
     border-radius: 10px 0 10px 0;
     font-weight: 700;
 }
-.f-price-box { margin-top: 5px; font-weight: 700; color: var(--text-main); display: flex; align-items: baseline; gap: 5px; }
-.f-mrp { text-decoration: line-through; color: #999; font-size: 0.8rem; font-weight: 400; }
 
-/* --- Brand Scroller (New Feature) --- */
-.brand-scroller {
-    display: flex;
-    gap: 20px;
-    overflow-x: auto;
-    padding: 0 20px 20px;
-    scrollbar-width: none;
+.f-price-box { 
+    margin-top: 5px; 
+    font-weight: 700; 
+    color: #b91c1c; /* Dark Red Price */
+    display: flex; 
+    align-items: baseline; 
+    gap: 5px; 
 }
-.brand-circle {
-    flex: 0 0 70px;
-    height: 70px;
-    border-radius: 50%;
-    border: 1px solid #eee;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #fff;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    transition: transform 0.2s;
-}
-.brand-circle:hover { transform: translateY(-3px); border-color: var(--primary); }
-.brand-circle img { width: 45px; object-fit: contain; }
 
-/* --- Product Shelves (Horizontal Scrolling Feed) --- */
+.f-mrp { 
+    text-decoration: line-through; 
+    color: #999; 
+    font-size: 0.8rem; 
+    font-weight: 400; 
+}
+
+
+
+
+
 .feed-section {
     background: #fff;
     padding: 15px 0;
@@ -173,4 +192,50 @@
 /* Reusing standard product card styles from components.css, ensuring they fit in scroll */
 .product-scroll-wrapper .product-card {
     flex: 0 0 180px; /* Fixed width for horizontal scroll items */
+}
+
+
+
+.brands-section-blue {
+    background: linear-gradient(to right, #eff6ff, #ffffff); /* Light Blue BG */
+    padding: 20px 0;
+    border-top: 1px solid #dbeafe;
+    border-bottom: 1px solid #dbeafe;
+    margin-bottom: 30px;
+}
+
+.brands-section-blue .section-head h3 {
+    color: #1e40af; /* Dark Blue Title */
+}
+
+.brand-scroller {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    padding: 0 20px 10px; /* Thoda padding adjust kiya */
+    scrollbar-width: none;
+}
+
+.brand-circle {
+    flex: 0 0 75px;
+    height: 75px;
+    border-radius: 50%;
+    border: 2px solid #fff; /* White border initially */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.15); /* Blue Shadow */
+    transition: all 0.3s;
+}
+
+.brand-circle:hover { 
+    transform: translateY(-5px); 
+    border-color: #3b82f6; /* Blue Border on Hover */
+    box-shadow: 0 8px 15px rgba(59, 130, 246, 0.25);
+}
+
+.brand-circle img { 
+    width: 45px; 
+    object-fit: contain; 
 }
