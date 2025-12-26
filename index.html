@@ -1,65 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QuickDash - Groceries in Minutes</title>
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/assets/css/base.css">
-    <link rel="stylesheet" href="/assets/css/components.css">
     <link rel="stylesheet" href="/assets/css/layout.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
     <link rel="stylesheet" href="/assets/css/pages/home.css">
     <link rel="stylesheet" href="/assets/css/assistant.css">
 </head>
-
 <body>
     <div id="navbar-placeholder"></div>
 
-    <main>
+    <main class="container">
         <div class="hero-wrapper">
-            <div id="hero-slider" class="hero-slider skeleton" style="min-height: 180px;">
-            </div>
+            <div id="hero-slider" class="hero-slider skeleton" style="min-height: 250px;"></div>
         </div>
 
         <div class="features-bar">
-            <div class="feature-item"><i class="fas fa-bolt"></i> 10 min Delivery</div>
-            <div class="feature-item"><i class="fas fa-award"></i> Best Quality</div>
-            <div class="feature-item"><i class="fas fa-tags"></i> Low Prices</div>
+            <div class="feature-item"><i class="fas fa-stopwatch"></i> 10 min Delivery</div>
+            <div class="feature-item"><i class="fas fa-medal"></i> Best Quality</div>
+            <div class="feature-item"><i class="fas fa-percentage"></i> Cheap Prices</div>
+            <div class="feature-item"><i class="fas fa-headset"></i> 24/7 Support</div>
         </div>
 
         <section class="category-scroll-section">
             <div class="section-head">
-                <h3>Explore Categories</h3>
-                <a href="/category.html">See All</a>
+                <h3>Shop by Category</h3>
+                <a href="/category.html">View All <i class="fas fa-arrow-right"></i></a>
             </div>
             <div id="category-grid" class="category-scroll">
-                <div class="skeleton" style="height:80px; border-radius:18px;"></div>
-                <div class="skeleton" style="height:80px; border-radius:18px;"></div>
-                <div class="skeleton" style="height:80px; border-radius:18px;"></div>
-                <div class="skeleton" style="height:80px; border-radius:18px;"></div>
+                <div class="skeleton" style="height:90px; width:90px; border-radius:25px;"></div>
+                <div class="skeleton" style="height:90px; width:90px; border-radius:25px;"></div>
+                <div class="skeleton" style="height:90px; width:90px; border-radius:25px;"></div>
+                <div class="skeleton" style="height:90px; width:90px; border-radius:25px;"></div>
             </div>
         </section>
 
         <section id="flash-sale-section" class="flash-sale-container" style="display: none;">
             <div class="flash-header">
                 <div class="flash-title">
-                    <i class="fas fa-bolt"></i>
-                    <h3 class="m-0">Deal of the Day</h3>
+                    <i class="fas fa-bolt fa-lg"></i>
+                    <h3 class="m-0">Flash Sales</h3>
                 </div>
                 <div id="flash-timer" class="flash-timer">00:00:00</div>
             </div>
-            <div id="flash-sale-grid" class="flash-grid">
-            </div>
+            <div id="flash-sale-grid" class="flash-grid"></div>
         </section>
 
-        <section class="brands-section-blue mb-4">
-            <div class="section-head" style="padding: 0 20px;">
-                <h3>Top Brands</h3>
+        <section class="mb-5">
+            <div class="section-head">
+                <h3>Popular Brands</h3>
             </div>
-            <div id="brand-scroller" class="brand-scroller">
-            </div>
+            <div id="brand-scroller" class="d-flex gap-3" style="overflow-x:auto; padding-bottom:10px; scrollbar-width:none;">
+                </div>
         </section>
 
         <div id="feed-container" style="min-height: 300px;">
@@ -76,15 +72,7 @@
     <script src="/assets/js/services/cart.service.js"></script>
     <script src="/assets/js/layout/main-layout.js"></script>
     <script src="/assets/js/utils/location_picker.js"></script>
-
     <script src="/assets/js/pages/home.js"></script>
-
     <script src="/assets/js/components/assistant.js"></script>
-
-
-
-
-
 </body>
-
 </html>
