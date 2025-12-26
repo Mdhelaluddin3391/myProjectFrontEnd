@@ -150,30 +150,66 @@ const LocationPicker = {
         }
     },
 
-    confirm() {
-        // Save to LocalStorage
-        localStorage.setItem('user_lat', this.state.lat);
-        localStorage.setItem('user_lng', this.state.lng);
-        localStorage.setItem('user_address_text', this.state.address); // For Navbar display
-        
-        // Update Navbar Immediately
-        const navLoc = document.getElementById('header-location');
-        if(navLoc) navLoc.innerText = document.getElementById('loc-title').innerText;
+    // assets/js/utils/location_picker.js के अंदर confirm() फंक्शन को रिप्लेस करें
 
-        // If called for Checkout/Address page
-        if(this.callback) {
-            this.callback({
+    async confirm() {
+        // 1. बटन को लोडिंग स्टेट में डालें
+        const btn = document.getElementById('btn-confirm-loc');
+        const originalText = btn.innerText;
+        btn.innerText = "Checking Service...";
+        btn.disabled = true;
+
+        // 2. डेटा तैयार करें
+        this.state.address = document.getElementById('loc-desc').innerText; // अपडेटेड एड्रेस लें
+        
+        // 3. API को कॉल करें (Serviceability Check)
+        try {
+            // नोट: अपने बैकएंड का सही URL यहाँ लिखें (जैसे: /common/check-serviceability/)
+            const res = await ApiService.post('/common/check-serviceability/', {
                 lat: this.state.lat,
                 lng: this.state.lng,
-                address_text: this.state.address,
-                city: this.state.city,
-                pincode: this.state.pincode
+                pincode: this.state.pincode || '' // पिनकोड भी भेजें अगर उपलब्ध हो
             });
-        } else {
-            // Reload to apply location context (e.g. check serviceability)
-            window.location.reload();
+
+            // 4. अगर बैकएंड कहे कि सर्विस नहीं है (is_serviceable: false)
+            if (res.serviceable === false) { // या res.is_serviceable, जो आपका बैकएंड भेजे
+                
+                // लोकेशन सेव करें ताकि 'not_serviceable' पेज पर "Change Location" बटन काम करे
+                localStorage.setItem('user_lat', this.state.lat);
+                localStorage.setItem('user_lng', this.state.lng);
+                localStorage.setItem('user_address_text', this.state.address);
+
+                // Redirect करें
+                window.location.href = '/not_serviceable.html';
+                return;
+            }
+
+            // 5. अगर सर्विस है (Success)
+            localStorage.setItem('user_lat', this.state.lat);
+            localStorage.setItem('user_lng', this.state.lng);
+            localStorage.setItem('user_address_text', this.state.address);
+            if(this.state.pincode) localStorage.setItem('user_pincode', this.state.pincode);
+
+            // Navbar अपडेट करें
+            const navLoc = document.getElementById('header-location');
+            if(navLoc) navLoc.innerText = document.getElementById('loc-title').innerText;
+
+            Toast.success("Location Confirmed!");
+
+            if(this.callback) {
+                this.callback(this.state);
+            } else {
+                // पेज रीलोड करें ताकि प्रोडक्ट्स नए लोकेशन के हिसाब से दिखें
+                window.location.reload();
+            }
+            this.close();
+
+        } catch (e) {
+            console.error("Service Check Failed", e);
+            Toast.error("Service check failed. Please try again.");
+            btn.innerText = originalText;
+            btn.disabled = false;
         }
-        this.close();
     }
 };
 
