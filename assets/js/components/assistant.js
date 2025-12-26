@@ -62,32 +62,42 @@ class Assistant {
 
         // Send Logic
         const handleSend = async () => {
-            const text = input.value.trim();
-            if (!text) return;
+    const input = document.getElementById('ast-input');
+    const text = input.value.trim();
+    if (!text) return;
 
-            this.addMessage(text, 'user');
-            input.value = '';
+    Assistant.addMessage(text, 'user');
+    input.value = '';
 
-            try {
-                this.addTyping();
-                
-                // Call Backend
-                const res = await ApiService.post('/catalog/assistant/chat/', { message: text });
-                
-                this.removeTyping();
-                this.addMessage(res.reply || "I didn't understand that.", 'bot');
+    try {
+        Assistant.addTyping();
+        
+        // Backend API call
+        const res = await ApiService.post('/assistant/chat/', { message: text });
+        
+        Assistant.removeTyping();
+        Assistant.addMessage(res.reply || "I didn't understand that.", 'bot');
 
-                if (res.action === 'cart_updated') {
-                    // Trigger global event update
-                    if(window.CartService) CartService.updateGlobalCount();
-                    Toast.success("Cart updated!");
-                }
+        // NEW: Action Handling
+        if (res.action === 'search_results' && res.params.query) {
+            // Agar products milte hain toh search page par bhej sakte hain
+            const viewBtn = document.createElement('button');
+            viewBtn.className = 'btn btn-sm btn-outline-primary mt-2';
+            viewBtn.innerText = 'View All Results';
+            viewBtn.onclick = () => window.location.href = `/search_results.html?q=${encodeURIComponent(res.params.query)}`;
+            document.getElementById('ast-messages').appendChild(viewBtn);
+        }
 
-            } catch (e) {
-                this.removeTyping();
-                this.addMessage("Sorry, I'm having trouble connecting to the server.", 'bot');
-            }
-        };
+        if (res.action === 'cart_updated') {
+            if(window.CartService) await CartService.updateGlobalCount();
+            Toast.success("Cart updated by AI!");
+        }
+
+    } catch (e) {
+        Assistant.removeTyping();
+        Assistant.addMessage("Sorry, server busy.", 'bot');
+    }
+};
 
         send.onclick = handleSend;
         input.onkeypress = (e) => { if (e.key === 'Enter') handleSend(); };

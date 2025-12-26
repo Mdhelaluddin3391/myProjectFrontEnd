@@ -54,24 +54,28 @@ async function handleVerifyOtp(e) {
     toggleBtnLoading(btn, true, 'Verifying...');
 
     try {
-        // 1. Verify
+        // 1. OTP Verify
         await ApiService.post('/notifications/verify-otp/', { phone: `+91${phoneNumber}`, otp: otp });
         
-        // 2. Register/Login
+        // 2. Login/Register
         const res = await ApiService.post('/auth/register/customer/', { phone: `+91${phoneNumber}` });
         
-        // 3. Save Token
         if(res.access) localStorage.setItem(APP_CONFIG.STORAGE_KEYS.TOKEN, res.access);
-        if(res.refresh) localStorage.setItem('refresh_token', res.refresh);
 
-        // 4. Fetch Profile
+        // 3. Fetch Profile to check if user is active/blocked
         const profile = await ApiService.get('/auth/me/');
-        localStorage.setItem(APP_CONFIG.STORAGE_KEYS.USER, JSON.stringify(profile));
         
+        // Agar user active nahi hai (Backend se block hai)
+        if (!profile.is_active) {
+            throw new Error("Your account is temporarily suspended due to multiple cancellations. Please contact support.");
+        }
+
+        localStorage.setItem(APP_CONFIG.STORAGE_KEYS.USER, JSON.stringify(profile));
         Toast.success("Login Successful");
         window.location.href = APP_CONFIG.ROUTES.HOME;
 
     } catch(err) {
+        // Yahan 'user_blocked' ya custom message handle hoga
         Toast.error(err.message || "Verification Failed");
         toggleBtnLoading(btn, false, 'Verify & Login');
     }

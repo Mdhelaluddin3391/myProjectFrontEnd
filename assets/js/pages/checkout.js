@@ -55,6 +55,7 @@ async function loadSummary() {
             return;
         }
 
+        // Mini cart items render karna
         document.getElementById('mini-cart-list').innerHTML = cart.items.map(i => `
             <div class="d-flex justify-between mb-2 small">
                 <span>${i.quantity} x ${i.sku_name}</span>
@@ -62,11 +63,31 @@ async function loadSummary() {
             </div>
         `).join('');
 
-        document.getElementById('summ-subtotal').innerText = Formatters.currency(cart.total_amount);
-        document.getElementById('summ-total').innerText = Formatters.currency(cart.total_amount); // Add delivery logic if needed
+        // Backend se surge multiplier lane ke liye (Optional check if available)
+        // Abhi hum base total dikha rahe hain
+        let subtotal = parseFloat(cart.total_amount);
+        let surgeMultiplier = 1.0; 
+        
+        // Agar backend Order creation se pehle surge batata hai toh yahan calculate hoga
+        // Maan lete hain backend se multiplier mil raha hai
+        let finalTotal = subtotal * surgeMultiplier;
+        let surgeFee = finalTotal - subtotal;
+
+        document.getElementById('summ-subtotal').innerText = Formatters.currency(subtotal);
+        
+        // Surge Fee section agar fee > 0 hai
+        const totalContainer = document.getElementById('summ-total').parentElement;
+        if (surgeFee > 0) {
+            const surgeRow = document.createElement('div');
+            surgeRow.className = 'summary-row text-danger small';
+            surgeRow.innerHTML = `<span>High Demand Surge (x${surgeMultiplier})</span><span>${Formatters.currency(surgeFee)}</span>`;
+            totalContainer.parentNode.insertBefore(surgeRow, totalContainer);
+        }
+
+        document.getElementById('summ-total').innerText = Formatters.currency(finalTotal);
 
     } catch (e) {
-        console.error(e);
+        console.error("Summary loading failed:", e);
     }
 }
 

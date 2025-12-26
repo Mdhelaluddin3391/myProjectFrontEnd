@@ -1,24 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order Details - QuickDash</title>
-    
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/assets/css/base.css">
     <link rel="stylesheet" href="/assets/css/components.css">
     <link rel="stylesheet" href="/assets/css/layout.css">
     <link rel="stylesheet" href="/assets/css/pages/account.css">
-    
+
     <style>
-        .od-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 20px; margin-bottom: 20px; }
-        .od-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; }
-        .item-row { display: flex; align-items: center; gap: 15px; padding: 15px 0; border-bottom: 1px solid #eee; }
-        .item-row:last-child { border-bottom: none; }
-        @media(max-width: 768px) { .od-grid { grid-template-columns: 1fr; } }
+        .od-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+
+        .od-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        .item-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .item-row:last-child {
+            border-bottom: none;
+        }
+
+        @media(max-width: 768px) {
+            .od-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
+
 <body>
     <div id="navbar-placeholder"></div>
 
@@ -28,7 +57,7 @@
         </div>
 
         <div id="loader" class="loader-spinner"></div>
-        
+
         <div id="od-content" class="d-none">
             <div class="card mb-4">
                 <div class="od-header">
@@ -74,8 +103,13 @@
                         </div>
 
                         <div class="mb-2">
-                            <h5 class="mb-2">Payment</h5>
+                            <h5 class="mb-2">Payment Details</h5>
                             <p id="od-payment" class="text-muted small">...</p>
+                            <div id="refund-section" class="mt-3 p-2 d-none"
+                                style="background: #fff5f5; border-radius: 8px; border: 1px solid #feb2b2;">
+                                <h6 class="text-danger mb-1"><i class="fas fa-undo"></i> Refund Status</h6>
+                                <p id="refund-status-text" class="small mb-0">Processing your refund...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -89,7 +123,7 @@
     <script src="/assets/js/utils/formatters.js"></script>
     <script src="/assets/js/services/api.service.js"></script>
     <script src="/assets/js/layout/main-layout.js"></script>
-    
+
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const id = new URLSearchParams(window.location.search).get('id');
@@ -100,11 +134,11 @@
 
             try {
                 const order = await ApiService.get(`/orders/${id}/`);
-                
+
                 // Header
-                document.getElementById('od-id').innerText = `Order #${order.id.slice(0,8).toUpperCase()}`;
+                document.getElementById('od-id').innerText = `Order #${order.id.slice(0, 8).toUpperCase()}`;
                 document.getElementById('od-date').innerText = Formatters.dateTime(order.created_at);
-                
+
                 const statusEl = document.getElementById('od-status');
                 statusEl.innerText = order.status;
                 statusEl.className = `status-badge status-${order.status.toLowerCase()}`;
@@ -128,7 +162,7 @@
                 // Assuming backend sends total, or sum up items
                 const subtotal = order.items.reduce((acc, i) => acc + parseFloat(i.total_price), 0);
                 document.getElementById('val-sub').innerText = Formatters.currency(subtotal);
-                
+
                 if (order.delivery_address_json) {
                     const a = order.delivery_address_json;
                     document.getElementById('od-address').innerHTML = `
@@ -136,6 +170,24 @@
                         ${a.full_address}<br>
                         ${a.city} - ${a.pincode}
                     `;
+                }
+
+                const paymentText = `Method: ${order.payment_method} | Status: ${order.payment_status.toUpperCase()}`;
+                document.getElementById('od-payment').innerText = paymentText;
+
+                if (order.refund_details) {
+                    const refundSec = document.getElementById('refund-section');
+                    const refundMsg = document.getElementById('refund-status-text');
+                    refundSec.classList.remove('d-none');
+
+                    if (order.refund_details.status === 'processed') {
+                        refundSec.style.background = '#f0fdf4';
+                        refundSec.style.borderColor = '#bbf7d0';
+                        refundMsg.className = 'text-success small mb-0';
+                        refundMsg.innerHTML = `<strong>Refund Successful:</strong> ${Formatters.currency(order.refund_details.amount)} has been credited to your original payment method.`;
+                    } else {
+                        refundMsg.innerText = `Refund of ${Formatters.currency(order.refund_details.amount)} is ${order.refund_details.status}. It usually takes 5-7 business days.`;
+                    }
                 }
 
                 document.getElementById('od-payment').innerText = order.payment_method || 'COD';
@@ -149,4 +201,5 @@
         });
     </script>
 </body>
+
 </html>
