@@ -164,6 +164,14 @@ async function placeOrder() {
     btn.innerText = "Processing...";
 
     try {
+        // [FIX] Pre-flight Check for Razorpay
+        if (paymentMethod === 'RAZORPAY') {
+            if (typeof Razorpay === 'undefined') {
+                btn.innerText = "Loading Secure Payment...";
+                await loadRazorpayScript();
+            }
+        }
+
         const orderRes = await ApiService.post('/orders/create/', {
             delivery_address_id: selectedAddressId,
             warehouse_id: resolvedWarehouseId,
@@ -182,12 +190,24 @@ async function placeOrder() {
         }
     } catch (e) {
         let msg = e.message || "Order Failed";
+        if (msg.includes("razorpay")) msg = "Payment Gateway unavailable. Please disable AdBlocker.";
         if (msg.toLowerCase().includes("stock")) msg = "⚠️ Some items are out of stock.";
-        if (msg.toLowerCase().includes("price")) msg = "⚠️ Prices have changed.";
+        
         Toast.error(msg);
         btn.disabled = false;
         btn.innerText = originalText;
     }
+}
+
+
+function loadRazorpayScript() {
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.onload = resolve;
+        script.onerror = () => reject(new Error("Failed to load Razorpay SDK"));
+        document.body.appendChild(script);
+    });
 }
 
 
