@@ -13,10 +13,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     await Promise.all([loadAddresses(), loadSummary()]);
     document.getElementById('place-order-btn').addEventListener('click', placeOrder);
     
-    // Auto-resolve warehouse if location exists
     const lat = localStorage.getItem('user_lat');
     const lng = localStorage.getItem('user_lng');
-    if(lat && lng) resolveWarehouse(lat, lng);
+    const city = localStorage.getItem('user_city');
+    if(lat && lng && city) resolveWarehouse(lat, lng, city);
 });
 
 async function loadSummary() {
@@ -81,7 +81,7 @@ window.selectAddress = function(id, lat, lng, city, el) {
         document.querySelectorAll('.address-card').forEach(c => c.classList.remove('active'));
         el.classList.add('active');
     }
-    resolveWarehouse(lat, lng);
+    resolveWarehouse(lat, lng, city);
 };
 
 window.selectPayment = function(method, el) {
@@ -90,34 +90,37 @@ window.selectPayment = function(method, el) {
     el.classList.add('selected');
 }
 
-async function resolveWarehouse(lat, lng) {
+async function resolveWarehouse(lat, lng, city) {
     const placeOrderBtn = document.getElementById('place-order-btn');
     placeOrderBtn.disabled = true;
     placeOrderBtn.innerText = "Checking Availability...";
 
     try {
-        // Correct endpoint
-        const res = await ApiService.post('/locations/check-service/', {
-            customer_lat: lat, 
-            customer_lon: lng
+        const res = await ApiService.post('/warehouse/find-serviceable/', {
+            latitude: lat,
+            longitude: lng,
+            city: city || 'Bengaluru'
         });
 
-        if (res.serviceable) {
-            resolvedWarehouseId = res.warehouse_id || 1; 
+        if (res.serviceable && res.warehouse && res.warehouse.id) {
+            resolvedWarehouseId = res.warehouse.id; 
             placeOrderBtn.disabled = false;
             placeOrderBtn.innerText = "Place Order";
         } else {
             resolvedWarehouseId = null;
             placeOrderBtn.innerText = "Location Not Serviceable";
-            Toast.error("We do not deliver here yet.");
+            Toast.error("Sorry, we do not deliver to this location yet.");
         }
     } catch (e) {
+        resolvedWarehouseId = null;
         placeOrderBtn.innerText = "Service Error";
     }
 }
 
 async function placeOrder() {
-    if (!selectedAddressId || !resolvedWarehouseId) return Toast.warning("Please select a serviceable address");
+    if (!selectedAddressId || !resolvedWarehouseId) {
+        return Toast.warning("Please select a serviceable address");
+    }
 
     const btn = document.getElementById('place-order-btn');
     const originalText = btn.innerText;
@@ -125,7 +128,6 @@ async function placeOrder() {
     btn.innerText = "Processing...";
 
     try {
-        // 1. Create Order API Call
         const orderRes = await ApiService.post('/orders/create/', {
             delivery_address_id: selectedAddressId,
             warehouse_id: resolvedWarehouseId,
@@ -136,8 +138,6 @@ async function placeOrder() {
         if (paymentMethod === 'COD') {
             window.location.href = `/success.html?order_id=${orderRes.order.id}`;
         } else if (paymentMethod === 'RAZORPAY') {
-            // 2. Initiate Payment (Razorpay)
-            // Backend ab 'razorpay_order' object return karta hai response mein
             if (orderRes.razorpay_order) {
                 handleRazorpay(orderRes.razorpay_order, orderRes.order.id, btn);
             } else {
@@ -145,33 +145,12 @@ async function placeOrder() {
             }
         }
     } catch (e) {
-        console.error("Order Error:", e);
-        
-        // FIX: Better Error Handling for Stock/Abuse issues
         let msg = e.message || "Order Failed";
-        
-        if (msg.toLowerCase().includes("stock")) {
-            msg = "⚠️ Some items are out of stock. Please check your cart.";
-        } else if (msg.toLowerCase().includes("price changed")) {
-            msg = "⚠️ Prices have updated. Please review cart.";
-        }
-
+        if (msg.toLowerCase().includes("stock")) msg = "⚠️ Some items are out of stock.";
+        if (msg.toLowerCase().includes("price")) msg = "⚠️ Prices have changed.";
         Toast.error(msg);
-        
         btn.disabled = false;
         btn.innerText = originalText;
-    }
-}
-
-async function initiateOnlinePayment(orderId, btn) {
-    try {
-        // 3. Get Payment Config
-        const rpOrder = await ApiService.post(`/payments/create/${orderId}/`);
-        handleRazorpay(rpOrder, orderId, btn);
-    } catch (e) {
-        Toast.error("Payment Init Failed: " + e.message);
-        btn.disabled = false;
-        btn.innerText = "Retry Payment";
     }
 }
 
@@ -179,20 +158,29 @@ function handleRazorpay(rpOrder, orderId, btn) {
     if (!window.Razorpay) {
         Toast.error("Payment SDK not loaded");
         btn.disabled = false;
+        btn.innerText = "Place Order";
+        return;
+    }
+
+    // [FIX] Map 'key_id' (Backend) to 'key' (Frontend SDK)
+    const key = rpOrder.key || rpOrder.key_id;
+    if (!key) {
+        Toast.error("Payment Configuration Error");
+        btn.disabled = false;
+        btn.innerText = "Place Order";
         return;
     }
 
     const options = {
-        "key": rpOrder.key,
+        "key": key, 
         "amount": rpOrder.amount, 
         "currency": rpOrder.currency,
         "name": "QuickDash",
-        "description": "Groceries Payment",
+        "description": "Order #" + orderId,
         "order_id": rpOrder.id,
         "handler": async function (response) {
             btn.innerText = "Verifying...";
             try {
-                // 4. Verify Payment
                 await ApiService.post('/payments/verify/razorpay/', {
                     razorpay_payment_id: response.razorpay_payment_id,
                     razorpay_order_id: response.razorpay_order_id,
@@ -200,23 +188,35 @@ function handleRazorpay(rpOrder, orderId, btn) {
                 });
                 window.location.href = `/success.html?order_id=${orderId}`;
             } catch (e) {
-                Toast.error("Payment Verification Failed");
+                Toast.error("Payment Verification Failed. Contact Support.");
                 btn.disabled = false;
-                btn.innerText = "Retry";
+                btn.innerText = "Retry Verification";
             }
         },
         "prefill": {
             "contact": JSON.parse(localStorage.getItem(APP_CONFIG.STORAGE_KEYS.USER) || '{}').phone || ""
         },
-        "theme": { "color": "#32CD32" }
+        "theme": { "color": "#32CD32" },
+        "modal": {
+            "ondismiss": function() {
+                btn.disabled = false;
+                btn.innerText = "Place Order";
+            }
+        }
     };
 
-    const rzp1 = new Razorpay(options);
-    rzp1.open();
-    
-    rzp1.on('payment.failed', function (response){
-        Toast.error("Payment Failed: " + response.error.description);
+    try {
+        const rzp1 = new Razorpay(options);
+        rzp1.open();
+        rzp1.on('payment.failed', function (response){
+            Toast.error("Payment Failed: " + response.error.description);
+            btn.disabled = false;
+            btn.innerText = "Place Order";
+        });
+    } catch (e) {
+        console.error("Razorpay Launch Error", e);
+        Toast.error("Could not launch payment gateway.");
         btn.disabled = false;
-        btn.innerText = "Pay Now";
-    });
+        btn.innerText = "Place Order";
+    }
 }

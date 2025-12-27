@@ -10,7 +10,6 @@ class Assistant {
 
     static render() {
         const div = document.createElement('div');
-        // FIX: Removed <img> tag and used FontAwesome icon for reliability
         div.innerHTML = `
             <div id="ast-trigger" class="ast-btn">
                 <i class="fas fa-robot" style="font-size: 1.8rem; color: #fff;"></i>
@@ -48,7 +47,6 @@ class Assistant {
 
         if(!trigger) return;
 
-        // Toggle
         trigger.onclick = () => {
             windowEl.classList.add('active');
             trigger.style.display = 'none';
@@ -60,44 +58,45 @@ class Assistant {
             setTimeout(() => trigger.style.display = 'flex', 300);
         };
 
-        // Send Logic
         const handleSend = async () => {
-    const input = document.getElementById('ast-input');
-    const text = input.value.trim();
-    if (!text) return;
+            const text = input.value.trim();
+            if (!text) return;
 
-    Assistant.addMessage(text, 'user');
-    input.value = '';
+            Assistant.addMessage(text, 'user');
+            input.value = '';
 
-    try {
-        Assistant.addTyping();
-        
-        // Backend API call
-        const res = await ApiService.post('/assistant/chat/', { message: text });
-        
-        Assistant.removeTyping();
-        Assistant.addMessage(res.reply || "I didn't understand that.", 'bot');
+            try {
+                Assistant.addTyping();
+                
+                const res = await ApiService.post('/assistant/chat/', { message: text });
+                
+                Assistant.removeTyping();
+                Assistant.addMessage(res.reply || "I didn't understand that.", 'bot');
 
-        // NEW: Action Handling
-        if (res.action === 'search_results' && res.params.query) {
-            // Agar products milte hain toh search page par bhej sakte hain
-            const viewBtn = document.createElement('button');
-            viewBtn.className = 'btn btn-sm btn-outline-primary mt-2';
-            viewBtn.innerText = 'View All Results';
-            viewBtn.onclick = () => window.location.href = `/search_results.html?q=${encodeURIComponent(res.params.query)}`;
-            document.getElementById('ast-messages').appendChild(viewBtn);
-        }
+                // Action Handling
+                if (res.action === 'search_results' && res.params.query) {
+                    const viewBtn = document.createElement('button');
+                    viewBtn.className = 'btn btn-sm btn-outline-primary mt-2';
+                    viewBtn.innerText = 'View All Results';
+                    viewBtn.onclick = () => window.location.href = `/search_results.html?q=${encodeURIComponent(res.params.query)}`;
+                    document.getElementById('ast-messages').appendChild(viewBtn);
+                }
 
-        if (res.action === 'cart_updated') {
-            if(window.CartService) await CartService.updateGlobalCount();
-            Toast.success("Cart updated by AI!");
-        }
+                if (res.action === 'cart_updated') {
+                    if(window.CartService) await CartService.updateGlobalCount();
+                    Toast.success("Cart updated by AI!");
+                }
 
-    } catch (e) {
-        Assistant.removeTyping();
-        Assistant.addMessage("Sorry, server busy.", 'bot');
-    }
-};
+            } catch (e) {
+                Assistant.removeTyping();
+                // [AUDIT FIX] Handle 503 or specific error messages from backend
+                let errorMsg = "Sorry, I'm having trouble connecting right now.";
+                if (e.message && e.message.includes("trouble connecting")) {
+                    errorMsg = e.message; // Use backend friendly message
+                }
+                Assistant.addMessage(errorMsg, 'bot');
+            }
+        };
 
         send.onclick = handleSend;
         input.onkeypress = (e) => { if (e.key === 'Enter') handleSend(); };
@@ -128,8 +127,6 @@ class Assistant {
     }
 }
 
-// Auto-init
 document.addEventListener('DOMContentLoaded', () => {
-    // Adding a small delay to ensure CSS loads
     setTimeout(() => Assistant.init(), 1000); 
 });

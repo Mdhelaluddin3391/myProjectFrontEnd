@@ -1,92 +1,92 @@
 // assets/js/pages/home.js
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Load everything in parallel
+    // Parallel load for independent components
     Promise.all([
         loadBanners(),
-        loadCategories(),
-        loadFlashSales(),
         loadBrands(),
-        loadFeed()
+        loadFlashSales()
     ]);
+    
+    // Smart Feed Loading based on Location
+    const lat = localStorage.getItem('user_lat');
+    const lng = localStorage.getItem('user_lng');
+    const city = localStorage.getItem('user_city');
+
+    if (lat && lng && city) {
+        await loadStorefront(lat, lng, city);
+    } else {
+        await loadGenericFeed();
+        await loadCategories(); // Generic categories if no location
+    }
     
     startFlashTimer();
 });
 
-// 1. Banners
-async function loadBanners() {
-    const container = document.getElementById('hero-slider');
+// 1. Optimized Storefront (Location Aware)
+async function loadStorefront(lat, lng, city) {
+    const feedContainer = document.getElementById('feed-container');
+    const catContainer = document.getElementById('category-grid');
+    
+    feedContainer.innerHTML = '<div class="loader-spinner"></div>';
+
     try {
-        const res = await ApiService.get('/catalog/banners/');
-        const banners = res.results || res;
-        const heroBanners = banners.filter(b => b.position === 'HERO');
+        // [AUDIT FIX] Use single powerful endpoint
+        const res = await ApiService.get(`/catalog/storefront/?lat=${lat}&lon=${lng}&city=${city}`);
         
-        if (heroBanners.length > 0) {
-            container.classList.remove('skeleton');
-            container.innerHTML = heroBanners.map(b => `
-                <img src="${b.image_url}" class="hero-slide" 
-                     onclick="window.location.href='${b.target_url || '#'}'" 
-                     alt="${b.title || 'Banner'}">
+        if (!res.serviceable) {
+            feedContainer.innerHTML = `
+                <div class="text-center py-5">
+                    <p class="text-muted">We aren't in your area yet!</p>
+                    <button onclick="LocationPicker.open()" class="btn btn-sm btn-primary">Change Location</button>
+                </div>`;
+            return;
+        }
+
+        // Render Categories from Storefront Data
+        if (res.categories && res.categories.length > 0) {
+            catContainer.innerHTML = res.categories.slice(0, 8).map(c => `
+                <div class="cat-card" onclick="window.location.href='/search_results.html?slug=${c.name.toLowerCase()}'">
+                    <div class="cat-img-box">
+                        <img src="${c.icon || '/assets/img/placeholder_cat.png'}" alt="${c.name}">
+                    </div>
+                    <div class="cat-name">${c.name}</div>
+                </div>
             `).join('');
-        } else { container.style.display = 'none'; }
+
+            // Render Feed
+            feedContainer.innerHTML = res.categories.map(cat => `
+                <section class="feed-section">
+                    <div class="section-head" style="padding: 0 20px;">
+                        <h3>${cat.name}</h3>
+                        <a href="/search_results.html?slug=${cat.name.toLowerCase()}">See All</a>
+                    </div>
+                    <div class="product-scroll-wrapper">
+                        ${cat.products.map(p => createProductCard(p)).join('')}
+                    </div>
+                </section>
+            `).join('');
+        } else {
+            feedContainer.innerHTML = '<p class="text-center py-5">No products available right now.</p>';
+        }
+
     } catch (e) {
-        console.warn("Banner load failed", e);
-        container.classList.remove('skeleton');
-        container.style.display = 'none';
+        console.error("Storefront failed, falling back", e);
+        loadGenericFeed();
     }
 }
 
-// 2. Categories
-async function loadCategories() {
-    const container = document.getElementById('category-grid');
-    try {
-        const res = await ApiService.get('/catalog/categories/');
-        const cats = res.results || res;
-        const displayCats = cats.slice(0, 8); // Show top 8
-
-        container.innerHTML = displayCats.map(c => `
-            <div class="cat-card" onclick="window.location.href='/search_results.html?slug=${c.slug}'">
-                <div class="cat-img-box">
-                    <img src="${c.icon_url || '/assets/img/placeholder_cat.png'}" alt="${c.name}">
-                </div>
-                <div class="cat-name">${c.name}</div>
-            </div>
-        `).join('');
-    } catch (e) { console.error("Category error", e); }
-}
-
-// 3. Brands
-async function loadBrands() {
-    const container = document.getElementById('brand-scroller');
-    try {
-        const res = await ApiService.get('/catalog/brands/');
-        const brands = res.results || res;
-
-        if(!brands.length) {
-            document.querySelector('.brands-section').style.display = 'none';
-            return;
-        }
-        container.innerHTML = brands.map(b => `
-            <div class="brand-circle" onclick="window.location.href='/search_results.html?brand=${b.id}'">
-                <img src="${b.logo_url}" alt="${b.name}">
-            </div>
-        `).join('');
-    } catch (e) { console.warn("Brands error", e); }
-}
-
-// 4. Home Feed (Corrected Array Response)
-async function loadFeed() {
+// 2. Generic Fallback
+async function loadGenericFeed() {
     const container = document.getElementById('feed-container');
     try {
         const res = await ApiService.get('/catalog/api/home/feed/');
-        // Fix: Handle array response directly
         const sections = Array.isArray(res) ? res : (res.sections || []);
 
         container.innerHTML = sections.map(sec => `
             <section class="feed-section">
                 <div class="section-head" style="padding: 0 20px;">
                     <h3>${sec.category_name}</h3>
-                    ${sec.category_slug ? `<a href="/search_results.html?slug=${sec.category_slug}">See All</a>` : ''}
                 </div>
                 <div class="product-scroll-wrapper">
                     ${sec.products.map(p => createProductCard(p)).join('')}
@@ -94,18 +94,59 @@ async function loadFeed() {
             </section>
         `).join('');
     } catch (e) {
-        console.error("Feed error", e);
         container.innerHTML = `<p class="text-center text-muted py-5">No products found!</p>`;
     }
+}
+
+// 3. Components
+async function loadBanners() {
+    const container = document.getElementById('hero-slider');
+    try {
+        const banners = await ApiService.get('/catalog/banners/');
+        if (banners.length > 0) {
+            container.classList.remove('skeleton');
+            container.innerHTML = banners.map(b => `
+                <img src="${b.image_url}" class="hero-slide" 
+                     onclick="window.location.href='${b.target_url || '#'}'">
+            `).join('');
+        } else { container.style.display = 'none'; }
+    } catch (e) { container.style.display = 'none'; }
+}
+
+async function loadCategories() {
+    // Only used in fallback mode
+    const container = document.getElementById('category-grid');
+    try {
+        const cats = await ApiService.get('/catalog/categories/');
+        container.innerHTML = cats.slice(0, 8).map(c => `
+            <div class="cat-card" onclick="window.location.href='/search_results.html?slug=${c.slug}'">
+                <div class="cat-img-box">
+                    <img src="${c.icon_url || '/assets/img/placeholder_cat.png'}">
+                </div>
+                <div class="cat-name">${c.name}</div>
+            </div>
+        `).join('');
+    } catch (e) {}
+}
+
+async function loadBrands() {
+    const container = document.getElementById('brand-scroller');
+    try {
+        const brands = await ApiService.get('/catalog/brands/');
+        if(!brands.length) return;
+        container.innerHTML = brands.map(b => `
+            <div class="brand-circle" onclick="window.location.href='/search_results.html?brand=${b.id}'">
+                <img src="${b.logo_url}" alt="${b.name}">
+            </div>
+        `).join('');
+    } catch (e) {}
 }
 
 async function loadFlashSales() {
     const section = document.getElementById('flash-sale-section');
     const grid = document.getElementById('flash-sale-grid');
     try {
-        const res = await ApiService.get('/catalog/flash-sales/');
-        const sales = res.results || res;
-
+        const sales = await ApiService.get('/catalog/flash-sales/');
         if (!sales || sales.length === 0) {
             section.style.display = 'none';
             return;
@@ -113,18 +154,16 @@ async function loadFlashSales() {
         section.style.display = 'block';
         grid.innerHTML = sales.map(item => `
             <div class="flash-card">
-                <div class="badge-off">${item.discount_percent || 'SALE'}% OFF</div>
-                <a href="/product.html?code=${item.sku || item.id}">
-                    <img src="${item.image_url || item.sku_image}" style="width:100%; height:100px; object-fit:contain; margin-bottom:5px;">
-                    <div style="font-size:0.85rem; font-weight:600; height:36px; overflow:hidden; line-height:1.2;">
-                        ${item.sku_name || item.name}
-                    </div>
+                <div class="badge-off">${item.discount_percent}% OFF</div>
+                <a href="/product.html?code=${item.sku_id}">
+                    <img src="${item.sku_image}" style="width:100%; height:100px; object-fit:contain; margin-bottom:5px;">
+                    <div style="font-size:0.85rem; font-weight:600; height:36px; overflow:hidden;">${item.sku_name}</div>
                 </a>
                 <div class="f-price-box">
-                    <span>${Formatters.currency(item.sale_price || item.discounted_price)}</span>
-                    <span class="f-mrp">${Formatters.currency(item.mrp || item.original_price)}</span>
+                    <span>${Formatters.currency(item.discounted_price)}</span>
+                    <span class="f-mrp">${Formatters.currency(item.original_price)}</span>
                 </div>
-                <button onclick="addToCart('${item.id}', this)" class="btn btn-sm btn-primary w-100 mt-2">ADD</button>
+                <button onclick="addToCart('${item.sku_id}', this)" class="btn btn-sm btn-primary w-100 mt-2">ADD</button>
             </div>
         `).join('');
     } catch (e) { section.style.display = 'none'; }
@@ -138,10 +177,9 @@ function createProductCard(p) {
                 <div style="font-size:0.9rem; font-weight:600; height:40px; overflow:hidden; margin-bottom:5px;">
                     ${p.name}
                 </div>
-                <div class="text-muted small">${p.sku || ''}</div>
             </a>
             <div class="d-flex justify-between align-center mt-2">
-                <div style="font-weight:700;">${Formatters.currency(p.sale_price || p.price)}</div>
+                <div style="font-weight:700;">${Formatters.currency(p.sale_price || p.selling_price || p.price)}</div>
                 <button class="btn btn-sm btn-outline-primary" onclick="addToCart('${p.id}', this)">ADD</button>
             </div>
         </div>
@@ -163,7 +201,6 @@ function startFlashTimer() {
     }, 1000);
 }
 
-// Global Add to Cart
 window.addToCart = async function(skuId, btn) {
     if (!localStorage.getItem(APP_CONFIG.STORAGE_KEYS.TOKEN)) {
         Toast.warning("Login required");
