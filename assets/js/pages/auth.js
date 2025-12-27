@@ -71,7 +71,8 @@ async function handleVerifyAndLogin(e) {
     btn.innerText = "Verifying...";
     
     try {
-        // Correct API Call: Verify & Register/Login together
+        // FIX: Removed separate verify-otp call. 
+        // Direct Register/Login call handles both verification and token generation.
         const res = await ApiService.post('/auth/register/customer/', { 
             phone: phoneNumber, 
             otp: otp 
@@ -81,7 +82,7 @@ async function handleVerifyAndLogin(e) {
             localStorage.setItem(APP_CONFIG.STORAGE_KEYS.TOKEN, res.access);
             if(res.refresh) localStorage.setItem(APP_CONFIG.STORAGE_KEYS.REFRESH, res.refresh);
             
-            // User Profile Fetch (Optional but good for UI)
+            // Fetch Profile immediately to update UI
             try {
                 const user = await ApiService.get('/auth/me/');
                 localStorage.setItem(APP_CONFIG.STORAGE_KEYS.USER, JSON.stringify(user));

@@ -175,9 +175,7 @@
                 const paymentText = `Method: ${order.payment_method} | Status: ${order.payment_status.toUpperCase()}`;
                 document.getElementById('od-payment').innerText = paymentText;
 
-                if (order.refund_details) {
-                    const refundSec = document.getElementById('refund-section');
-                    const refundMsg = document.getElementById('refund-status-text');
+                if (order.refund_details && order.refund_details.status) {
                     refundSec.classList.remove('d-none');
 
                     if (order.refund_details.status === 'processed') {
@@ -186,8 +184,13 @@
                         refundMsg.className = 'text-success small mb-0';
                         refundMsg.innerHTML = `<strong>Refund Successful:</strong> ${Formatters.currency(order.refund_details.amount)} has been credited to your original payment method.`;
                     } else {
+                        refundSec.style.background = '#fff5f5';
+                        refundMsg.className = 'text-danger small mb-0';
                         refundMsg.innerText = `Refund of ${Formatters.currency(order.refund_details.amount)} is ${order.refund_details.status}. It usually takes 5-7 business days.`;
                     }
+                } else {
+                    // Hide if no refund
+                    refundSec.classList.add('d-none');
                 }
 
                 document.getElementById('od-payment').innerText = order.payment_method || 'COD';
