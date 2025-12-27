@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +11,7 @@
     <link rel="stylesheet" href="/assets/css/layout.css">
     <link rel="stylesheet" href="/assets/css/track_order_style.css">
 </head>
+
 <body>
     <div id="navbar-placeholder"></div>
 
@@ -24,11 +26,15 @@
                 <div class="timeline-wrapper">
                     <div class="timeline-step" id="step-confirmed">
                         <div class="dot"></div>
-                        <div class="content"><h4>Order Confirmed</h4></div>
+                        <div class="content">
+                            <h4>Order Confirmed</h4>
+                        </div>
                     </div>
                     <div class="timeline-step" id="step-packed">
                         <div class="dot"></div>
-                        <div class="content"><h4>Packed</h4></div>
+                        <div class="content">
+                            <h4>Packed</h4>
+                        </div>
                     </div>
                     <div class="timeline-step" id="step-dispatched">
                         <div class="dot"></div>
@@ -45,7 +51,9 @@
                     </div>
                     <div class="timeline-step" id="step-delivered">
                         <div class="dot"></div>
-                        <div class="content"><h4>Delivered</h4></div>
+                        <div class="content">
+                            <h4>Delivered</h4>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -56,7 +64,6 @@
         </div>
     </main>
 
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_KEY_HERE&callback=initMap" async defer></script>
     <script src="/assets/js/config.js"></script>
     <script src="/assets/js/utils/toast.js"></script>
     <script src="/assets/js/utils/formatters.js"></script>
@@ -64,6 +71,23 @@
     <script src="/assets/js/layout/main-layout.js"></script>
 
     <script>
+        // [AUDIT FIX] Dynamic Google Maps Loading
+        function loadMapsScript() {
+            const script = document.createElement('script');
+            const key = window.APP_CONFIG.GOOGLE_MAPS_KEY || '';
+
+            if (!key || key === 'YOUR_ACTUAL_GOOGLE_MAPS_KEY_HERE') {
+                console.error("Google Maps API Key missing in config.js");
+                document.getElementById('map').innerHTML = '<div style="padding:20px; text-align:center;">Map Configuration Missing</div>';
+                return;
+            }
+
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&callback=initMap`;
+            script.async = true;
+            script.defer = true;
+            document.body.appendChild(script);
+        }
+
         let map, marker, riderMarker, orderId, socket;
         let reconnectInterval = 1000;
 
@@ -74,20 +98,22 @@
                 disableDefaultUI: true
             });
             marker = new google.maps.Marker({ map: map, title: "Destination" });
-            riderMarker = new google.maps.Marker({ 
-                map: map, 
+            riderMarker = new google.maps.Marker({
+                map: map,
                 icon: 'https://cdn-icons-png.flaticon.com/32/3063/3063823.png',
                 title: "Rider"
             });
         };
 
         document.addEventListener('DOMContentLoaded', () => {
+            loadMapsScript(); // Trigger Map Load
+
             orderId = new URLSearchParams(window.location.search).get('id');
             if (!orderId) return window.location.href = '/orders.html';
 
             document.getElementById('t-id').innerText = `Order #${orderId}`;
             fetchOrderDetails();
-            connectTrackingSocket(); // [AUDIT FIX] Added robust connection logic
+            connectTrackingSocket();
         });
 
         async function fetchOrderDetails() {
@@ -96,9 +122,9 @@
                 updateTimeline(order.status);
 
                 if (order.delivery_address_json && map) {
-                    const pos = { 
-                        lat: parseFloat(order.delivery_address_json.lat), 
-                        lng: parseFloat(order.delivery_address_json.lng) 
+                    const pos = {
+                        lat: parseFloat(order.delivery_address_json.lat),
+                        lng: parseFloat(order.delivery_address_json.lng)
                     };
                     marker.setPosition(pos);
                     map.panTo(pos);
@@ -129,7 +155,7 @@
                 const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
                 // Handle port 8000 for local dev vs 80 for prod
                 const host = window.APP_CONFIG.API_BASE_URL.replace('http://', '').replace('https://', '').split('/')[0];
-                
+
                 socket = new WebSocket(`${protocol}://${host}/ws/orders/${orderId}/?ticket=${res.ticket}`);
 
                 socket.onopen = () => {
@@ -161,4 +187,5 @@
         }
     </script>
 </body>
+
 </html>

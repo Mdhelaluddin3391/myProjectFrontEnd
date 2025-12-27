@@ -96,11 +96,13 @@ const LocationPicker = {
         this.state.lat = lat;
         this.state.lng = lng;
         try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
-            const data = await res.json();
-            const addr = data.address;
+            // [AUDIT FIX] Use Backend Proxy instead of direct OSM call
+            // Old: fetch(`https://nominatim.openstreetmap.org/reverse...`)
+            const data = await ApiService.get(`/locations/geocode/?lat=${lat}&lon=${lng}`);
+            
+            const addr = data.address || {};
             this.state.address = data.display_name;
-            this.state.city = addr.city || addr.town || "Bengaluru";
+            this.state.city = addr.city || addr.town || addr.village || "Bengaluru";
             this.state.pincode = addr.postcode || "";
 
             document.getElementById('loc-title').innerText = addr.suburb || this.state.city;
@@ -109,7 +111,10 @@ const LocationPicker = {
             const btn = document.getElementById('btn-confirm-loc');
             btn.disabled = false;
             btn.innerText = "Confirm Location";
-        } catch(e) { document.getElementById('btn-confirm-loc').innerText = "Retry"; }
+        } catch(e) { 
+            console.warn("Geocode error", e);
+            document.getElementById('btn-confirm-loc').innerText = "Retry"; 
+        }
     },
 
     async confirm() {

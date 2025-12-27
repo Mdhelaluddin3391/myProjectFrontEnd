@@ -154,6 +154,7 @@ async function placeOrder() {
     }
 }
 
+
 function handleRazorpay(rpOrder, orderId, btn) {
     if (!window.Razorpay) {
         Toast.error("Payment SDK not loaded");
@@ -162,7 +163,6 @@ function handleRazorpay(rpOrder, orderId, btn) {
         return;
     }
 
-    // [FIX] Map 'key_id' (Backend) to 'key' (Frontend SDK)
     const key = rpOrder.key || rpOrder.key_id;
     if (!key) {
         Toast.error("Payment Configuration Error");
@@ -188,9 +188,10 @@ function handleRazorpay(rpOrder, orderId, btn) {
                 });
                 window.location.href = `/success.html?order_id=${orderId}`;
             } catch (e) {
-                Toast.error("Payment Verification Failed. Contact Support.");
-                btn.disabled = false;
-                btn.innerText = "Retry Verification";
+                console.error("Verification Error", e);
+                // [AUDIT FIX] Better user feedback for ambiguous state
+                alert("Payment successful but verification timed out.\n\nPlease do NOT pay again. Check 'My Orders' in a few minutes or contact support if the order doesn't appear confirmed.");
+                window.location.href = '/orders.html';
             }
         },
         "prefill": {

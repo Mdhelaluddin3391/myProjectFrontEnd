@@ -80,7 +80,8 @@ async function loadStorefront(lat, lng, city) {
 async function loadGenericFeed() {
     const container = document.getElementById('feed-container');
     try {
-        const res = await ApiService.get('/catalog/api/home/feed/');
+        // [AUDIT FIX] Corrected URL from '/catalog/api/home/feed/' to '/catalog/home/feed/'
+        const res = await ApiService.get('/catalog/home/feed/');
         const sections = Array.isArray(res) ? res : (res.sections || []);
 
         container.innerHTML = sections.map(sec => `

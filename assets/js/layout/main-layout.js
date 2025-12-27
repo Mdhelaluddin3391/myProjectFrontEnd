@@ -1,34 +1,48 @@
 /* assets/js/layout/main-layout.js */
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // [AUDIT FIX] Centralized Auth Guard
+    enforceAuth();
+
     // 1. Load Components
     await loadComponent('/components/navbar.html', 'navbar-placeholder');
     await loadComponent('/components/footer.html', 'footer-placeholder');
 
     initializeGlobalEvents();
-    loadNavbarCategories(); // NEW: Load dynamic categories
+    loadNavbarCategories(); 
 });
 
+// [AUDIT FIX] Check protected routes centrally
+function enforceAuth() {
+    const protectedRoutes = ['/cart.html', '/checkout.html', '/profile.html', '/orders.html', '/track_order.html'];
+    const path = window.location.pathname;
+    
+    if (protectedRoutes.some(route => path.includes(route))) {
+        if (!localStorage.getItem(APP_CONFIG.STORAGE_KEYS.TOKEN)) {
+            // Stop rendering immediately if possible (body style hidden handled in CSS is best, but JS redirect here)
+            window.location.href = APP_CONFIG.ROUTES.LOGIN;
+        }
+    }
+}
+
 async function loadComponent(url, elementId) {
+// ... (rest of file remains unchanged)
     const element = document.getElementById(elementId);
     if (!element) return;
     try {
         const res = await fetch(url);
         if (res.ok) element.innerHTML = await res.text();
-    } catch (e) { console.error(e); }
+    } catch (e) { /* Console logs removed for prod */ }
 }
 
 function initializeGlobalEvents() {
     updateAuthUI();
     updateCartCount();
     
-    // Bind Location Button in Navbar
     const locBtn = document.getElementById('navbar-location-box');
     if(locBtn) {
-        // Display current saved location
         const savedLoc = localStorage.getItem('user_address_text');
         if(savedLoc) {
-            // Extract just the first part (Area Name) for cleaner look
             const shortLoc = savedLoc.split(',')[0];
             document.getElementById('header-location').innerText = shortLoc;
         }
@@ -38,7 +52,6 @@ function initializeGlobalEvents() {
         });
     }
 
-    // Listen for Cart Updates
     window.addEventListener('cart-updated', (event) => {
         const badge = document.getElementById('cart-badge');
         if (badge) {
@@ -49,19 +62,17 @@ function initializeGlobalEvents() {
     });
 }
 
-// NEW: Fetch Categories for Horizontal Navbar
+// ... (rest of functions: loadNavbarCategories, updateAuthUI, updateCartCount, logout)
 async function loadNavbarCategories() {
     const nav = document.getElementById('dynamic-navbar');
     if (!nav) return;
     
     try {
-        // Using ApiService safely
         if(typeof ApiService === 'undefined') return;
 
         const res = await ApiService.get('/catalog/categories/?page_size=15');
         const cats = res.results || res;
         
-        // Filter only parent categories
         const parents = cats.filter(c => !c.parent);
 
         parents.forEach(c => {
@@ -73,11 +84,10 @@ async function loadNavbarCategories() {
         });
 
     } catch (e) {
-        console.warn("Nav categories failed", e);
+        // Silent fail in prod
     }
 }
 
-// ... existing auth & cart functions (keep them as is) ...
 function updateAuthUI() { /* existing logic */ }
 async function updateCartCount() { 
     if(window.CartService) await CartService.updateGlobalCount(); 
@@ -85,11 +95,10 @@ async function updateCartCount() {
 window.logout = async function() {
     if(confirm("Logout?")) {
         try {
-            // Backend ko batao token invalidate kare
             await ApiService.post('/auth/logout/', { 
                 refresh: localStorage.getItem(APP_CONFIG.STORAGE_KEYS.REFRESH) 
             });
-        } catch(e) { console.log(e); }
+        } catch(e) {}
 
         localStorage.clear();
         window.location.href = '/auth.html';
