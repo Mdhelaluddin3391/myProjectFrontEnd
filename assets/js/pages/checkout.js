@@ -120,11 +120,12 @@ async function placeOrder() {
     if (!selectedAddressId || !resolvedWarehouseId) return Toast.warning("Please select a serviceable address");
 
     const btn = document.getElementById('place-order-btn');
+    const originalText = btn.innerText;
     btn.disabled = true;
     btn.innerText = "Processing...";
 
     try {
-        // 1. Create Order
+        // 1. Create Order API Call
         const orderRes = await ApiService.post('/orders/create/', {
             delivery_address_id: selectedAddressId,
             warehouse_id: resolvedWarehouseId,
@@ -133,15 +134,32 @@ async function placeOrder() {
         });
 
         if (paymentMethod === 'COD') {
-            window.location.href = `/success.html?order_id=${orderRes.id}`;
+            window.location.href = `/success.html?order_id=${orderRes.order.id}`;
         } else if (paymentMethod === 'RAZORPAY') {
-            // 2. Initiate Payment
-            await initiateOnlinePayment(orderRes.id, btn);
+            // 2. Initiate Payment (Razorpay)
+            // Backend ab 'razorpay_order' object return karta hai response mein
+            if (orderRes.razorpay_order) {
+                handleRazorpay(orderRes.razorpay_order, orderRes.order.id, btn);
+            } else {
+                throw new Error("Payment initialization failed");
+            }
         }
     } catch (e) {
-        Toast.error(e.message || "Order Failed");
+        console.error("Order Error:", e);
+        
+        // FIX: Better Error Handling for Stock/Abuse issues
+        let msg = e.message || "Order Failed";
+        
+        if (msg.toLowerCase().includes("stock")) {
+            msg = "⚠️ Some items are out of stock. Please check your cart.";
+        } else if (msg.toLowerCase().includes("price changed")) {
+            msg = "⚠️ Prices have updated. Please review cart.";
+        }
+
+        Toast.error(msg);
+        
         btn.disabled = false;
-        btn.innerText = "Place Order";
+        btn.innerText = originalText;
     }
 }
 

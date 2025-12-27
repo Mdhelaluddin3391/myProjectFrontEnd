@@ -119,29 +119,34 @@ const LocationPicker = {
         btn.disabled = true;
 
         try {
-            // FIX: Correct Endpoint
-            const res = await ApiService.post('/locations/check-service/', {
-                customer_lat: this.state.lat,
-                customer_lon: this.state.lng
-            });
+            // FIX: Endpoint updated to match Backend 'ServiceableWarehouseAPIView'
+            // Old: /locations/check-service/ -> New: /warehouse/find-serviceable/
+            const payload = {
+                latitude: this.state.lat,
+                longitude: this.state.lng,
+                city: this.state.city || 'Bengaluru' // City is required by backend
+            };
 
-            // Save Attempt
-            localStorage.setItem('user_lat', this.state.lat);
-            localStorage.setItem('user_lng', this.state.lng);
-            localStorage.setItem('user_address_text', this.state.address);
-            localStorage.setItem('user_city', this.state.city);
-            if(this.state.pincode) localStorage.setItem('user_pincode', this.state.pincode);
+            const res = await ApiService.post('/warehouse/find-serviceable/', payload);
 
             if (res.serviceable === false) {
                 window.location.href = '/not_serviceable.html';
                 return;
             }
+
+            // Save Validated Location
+            localStorage.setItem('user_lat', this.state.lat);
+            localStorage.setItem('user_lng', this.state.lng);
+            localStorage.setItem('user_address_text', this.state.address);
+            localStorage.setItem('user_city', this.state.city);
+            if(this.state.pincode) localStorage.setItem('user_pincode', this.state.pincode);
             
-            if(res.warehouse_id) {
-                localStorage.setItem('current_warehouse_id', res.warehouse_id);
+            // Save Warehouse ID logic (Backend sends 'warehouse' object inside response)
+            if(res.warehouse && res.warehouse.id) {
+                localStorage.setItem('current_warehouse_id', res.warehouse.id);
             }
 
-            Toast.success(res.message || "Location Confirmed!");
+            Toast.success("Location Confirmed & Serviceable!");
             
             if(this.callback) this.callback(this.state);
             else window.location.reload();
@@ -150,7 +155,8 @@ const LocationPicker = {
 
         } catch (e) {
             console.error("Service Check Failed", e);
-            Toast.error("Service check failed.");
+            // Agar backend se specific error aaye (jaise City not supported)
+            Toast.error(e.message || "Service check failed. Try another location.");
             btn.innerText = originalText;
             btn.disabled = false;
         }
