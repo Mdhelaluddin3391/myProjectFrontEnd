@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,19 +10,87 @@
     <link rel="stylesheet" href="/assets/css/components.css">
     <link rel="stylesheet" href="/assets/css/layout.css">
     <style>
-        .support-hero { background: var(--primary); color: #fff; padding: 60px 20px; text-align: center; border-radius: 0 0 40px 40px; }
-        .search-wrap { max-width: 600px; margin: 20px auto 0; position: relative; }
-        .search-wrap input { width: 100%; padding: 15px 20px 15px 50px; border-radius: 30px; border: none; outline: none; font-size: 1rem; }
-        .search-wrap i { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: #999; }
-        .faq-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: -30px; }
-        .ticket-section { max-width: 700px; margin: 50px auto; }
-        .contact-card { display: flex; align-items: center; gap: 15px; padding: 20px; transition: 0.3s; cursor: pointer; text-decoration: none; color: inherit; }
-        .contact-card:hover { transform: translateY(-5px); border-color: var(--primary); }
-        .icon-circle { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
-        .bg-green { background: #dcfce7; color: #16a34a; }
-        .bg-blue { background: #dbeafe; color: #2563eb; }
+        .support-hero {
+            background: var(--primary);
+            color: #fff;
+            padding: 60px 20px;
+            text-align: center;
+            border-radius: 0 0 40px 40px;
+        }
+
+        .search-wrap {
+            max-width: 600px;
+            margin: 20px auto 0;
+            position: relative;
+        }
+
+        .search-wrap input {
+            width: 100%;
+            padding: 15px 20px 15px 50px;
+            border-radius: 30px;
+            border: none;
+            outline: none;
+            font-size: 1rem;
+        }
+
+        .search-wrap i {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+
+        .faq-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: -30px;
+        }
+
+        .ticket-section {
+            max-width: 700px;
+            margin: 50px auto;
+        }
+
+        .contact-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+            transition: 0.3s;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .contact-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+
+        .icon-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .bg-green {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .bg-blue {
+            background: #dbeafe;
+            color: #2563eb;
+        }
     </style>
 </head>
+
 <body>
     <div id="navbar-placeholder"></div>
 
@@ -73,10 +142,18 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">Description</label>
-                        <textarea id="ticket-desc" class="form-control" rows="4" placeholder="Tell us more about the problem..." required></textarea>
+                        <textarea id="ticket-desc" class="form-control" rows="4"
+                            placeholder="Tell us more about the problem..." required></textarea>
                     </div>
                     <button type="submit" id="submit-ticket-btn" class="btn btn-primary w-100">Submit Ticket</button>
                 </form>
+            </div>
+        </section>
+
+
+        <section class="ticket-history-section container mt-5" id="history-section" style="display:none;">
+            <h3 class="mb-3">My Support Tickets</h3>
+            <div id="ticket-list" class="d-grid gap-3">
             </div>
         </section>
 
@@ -107,13 +184,14 @@
     <script src="/assets/js/utils/toast.js"></script>
     <script src="/assets/js/services/api.service.js"></script>
     <script src="/assets/js/layout/main-layout.js"></script>
-    
+
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const orderSelect = document.getElementById('ticket-order');
-            
+            loadTicketHistory();
+
             // 1. Check Auth
-            if(!localStorage.getItem(APP_CONFIG.STORAGE_KEYS.TOKEN)) {
+            if (!localStorage.getItem(APP_CONFIG.STORAGE_KEYS.TOKEN)) {
                 orderSelect.innerHTML = '<option value="">Login to see orders</option>';
                 return;
             }
@@ -122,12 +200,12 @@
             try {
                 const res = await ApiService.get('/orders/my/');
                 const orders = res.results || res;
-                
-                if(orders.length === 0) {
+
+                if (orders.length === 0) {
                     orderSelect.innerHTML = '<option value="">No orders found</option>';
                 } else {
-                    orderSelect.innerHTML = '<option value="">Select an order</option>' + 
-                        orders.map(o => `<option value="${o.id}">Order #${o.id.substring(0,8).toUpperCase()} (${Formatters.date(o.created_at)})</option>`).join('');
+                    orderSelect.innerHTML = '<option value="">Select an order</option>' +
+                        orders.map(o => `<option value="${o.id}">Order #${o.id.substring(0, 8).toUpperCase()} (${Formatters.date(o.created_at)})</option>`).join('');
                 }
             } catch (e) {
                 orderSelect.innerHTML = '<option value="">Error loading orders</option>';
@@ -139,14 +217,14 @@
             e.preventDefault();
             const btn = document.getElementById('submit-ticket-btn');
             const originalText = btn.innerText;
-            
+
             const payload = {
                 order_id: document.getElementById('ticket-order').value,
                 issue_type: document.getElementById('ticket-issue').value,
                 description: document.getElementById('ticket-desc').value
             };
 
-            if(!payload.order_id) return Toast.warning("Please select an order");
+            if (!payload.order_id) return Toast.warning("Please select an order");
 
             btn.disabled = true;
             btn.innerText = "Submitting...";
@@ -164,6 +242,39 @@
                 btn.innerText = originalText;
             }
         });
+
+
+        async function loadTicketHistory() {
+            if (!localStorage.getItem(APP_CONFIG.STORAGE_KEYS.TOKEN)) return;
+
+            const container = document.getElementById('ticket-list');
+            const section = document.getElementById('history-section');
+
+            try {
+                const res = await ApiService.get('/auth/customer/tickets/history/');
+                const tickets = res.results || res;
+
+                if (tickets.length > 0) {
+                    section.style.display = 'block';
+                    container.innerHTML = tickets.map(t => `
+                    <div class="card p-3">
+                        <div class="d-flex justify-between align-center mb-2">
+                            <span class="badge ${t.status === 'resolved' ? 'status-delivered' : 'status-pending'}">
+                                ${t.status.toUpperCase()}
+                            </span>
+                            <small class="text-muted">${Formatters.date(t.created_at)}</small>
+                        </div>
+                        <h5 class="m-0">Issue: ${t.issue_type.replace('_', ' ')}</h5>
+                        <p class="text-muted small mt-1">Order #${t.order_id}</p>
+                        <p class="mt-2 text-dark">${t.description}</p>
+                        ${t.resolution ? `<div class="mt-2 p-2 bg-light small"><strong>Resolution:</strong> ${t.resolution}</div>` : ''}
+                    </div>
+                `).join('');
+                }
+            } catch (e) {
+                console.warn("Failed to load tickets", e);
+            }
     </script>
 </body>
+
 </html>

@@ -3,8 +3,8 @@
  */
 class SearchManager {
     constructor() {
-        this.input = document.querySelector('input[name="q"]');
-        this.form = document.querySelector('.search-bar');
+        this.input = document.querySelector('input[name="search"]'); // Updated name to match navbar
+        this.form = document.querySelector('.search-bar-row');
         this.debounceTimer = null;
         this.suggestionBox = null;
 
@@ -17,12 +17,18 @@ class SearchManager {
         // Create Suggestion Box UI
         this.suggestionBox = document.createElement('div');
         this.suggestionBox.className = 'search-suggestions d-none';
-        this.form.style.position = 'relative'; // Ensure positioning context
+        this.suggestionBox.style.cssText = `
+            position: absolute; top: 100%; left: 0; right: 0;
+            background: #fff; border: 1px solid #ddd;
+            border-radius: 0 0 12px 12px; box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            z-index: 1000; overflow: hidden;
+        `;
+        this.form.style.position = 'relative'; 
         this.form.appendChild(this.suggestionBox);
 
         // Bind Events
         this.input.addEventListener('input', (e) => this.handleInput(e));
-        this.input.addEventListener('focus', (e) => this.handleInput(e));
+        this.input.addEventListener('focus', (e) => { if(e.target.value.length > 1) this.showSuggestions(); });
         
         // Close on click outside
         document.addEventListener('click', (e) => {
@@ -46,11 +52,9 @@ class SearchManager {
 
     async fetchSuggestions(query) {
         try {
-            // Adjust endpoint if your backend has a specific suggest API
-            // Otherwise, we search products and limit results
-            const res = await ApiService.get(`/catalog/skus/?search=${encodeURIComponent(query)}&page_size=5`);
-            const results = res.results || res;
-            this.renderSuggestions(results);
+            // UPDATED: Use the specific suggestion API
+            const res = await ApiService.get(`/catalog/search/suggest/?q=${encodeURIComponent(query)}`);
+            this.renderSuggestions(res);
         } catch (e) {
             console.warn("Search suggestion failed", e);
         }
@@ -62,21 +66,22 @@ class SearchManager {
             return;
         }
 
+        // Map API response structure { text, type, url }
         this.suggestionBox.innerHTML = items.map(item => `
-            <a href="/product.html?code=${item.sku_code || item.id}" class="suggestion-item">
-                <img src="${item.image_url || 'https://via.placeholder.com/30'}" width="30">
+            <div class="suggestion-item" onclick="window.location.href='${item.url}'" style="padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #f5f5f5; display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <div class="s-name">${item.name}</div>
-                    <div class="s-price">${Formatters.currency(item.sale_price)}</div>
+                    <span style="font-weight: 500;">${item.text}</span>
+                    <small class="text-muted" style="display: block; font-size: 0.75rem;">${item.type}</small>
                 </div>
-            </a>
+                <i class="fas fa-chevron-right text-muted small"></i>
+            </div>
         `).join('');
         
         // Add "View All" link
-        const viewAll = document.createElement('a');
-        viewAll.href = `/search_results.html?q=${encodeURIComponent(this.input.value)}`;
-        viewAll.className = 'suggestion-footer';
+        const viewAll = document.createElement('div');
+        viewAll.style.cssText = "padding: 10px; text-align: center; background: #f8f9fa; cursor: pointer; color: var(--primary); font-weight: 600; font-size: 0.9rem;";
         viewAll.innerText = `View all results for "${this.input.value}"`;
+        viewAll.onclick = () => this.form.submit(); // Submits the form to search_results.html
         this.suggestionBox.appendChild(viewAll);
 
         this.showSuggestions();
@@ -91,5 +96,4 @@ class SearchManager {
     }
 }
 
-// Initialize on load
 document.addEventListener('DOMContentLoaded', () => new SearchManager());

@@ -1,5 +1,4 @@
 /* assets/js/utils/location_picker.js */
-
 const LocationPicker = {
     state: { lat: 12.9716, lng: 77.5946, address: '', pincode: '', city: 'Bengaluru' },
     map: null,
@@ -47,7 +46,6 @@ const LocationPicker = {
         `;
         document.body.appendChild(div);
 
-        // Bind Events
         document.getElementById('close-map').onclick = () => this.close();
         document.getElementById('gps-trigger').onclick = () => this.triggerGPS();
         document.getElementById('btn-confirm-loc').onclick = () => this.confirm();
@@ -151,40 +149,32 @@ const LocationPicker = {
         btn.disabled = true;
 
         try {
-            // CORRECTED API ENDPOINT AND PAYLOAD
-            const res = await ApiService.post('/warehouse/find-serviceable/', {
-                latitude: this.state.lat,
-                longitude: this.state.lng,
-                city: this.state.city
+            // FIX: Using correct endpoint /locations/check-service/
+            const res = await ApiService.post('/locations/check-service/', {
+                customer_lat: this.state.lat,
+                customer_lon: this.state.lng
             });
 
             if (res.serviceable === false) {
-                // Save attempt anyway so "Change Location" on 404 page works
                 localStorage.setItem('user_lat', this.state.lat);
                 localStorage.setItem('user_lng', this.state.lng);
                 localStorage.setItem('user_address_text', this.state.address);
-                localStorage.setItem('user_city', this.state.city);
-
                 window.location.href = '/not_serviceable.html';
                 return;
             }
 
-            // Success: Save Location & Warehouse
+            // Success
             localStorage.setItem('user_lat', this.state.lat);
             localStorage.setItem('user_lng', this.state.lng);
             localStorage.setItem('user_address_text', this.state.address);
             localStorage.setItem('user_city', this.state.city);
             if(this.state.pincode) localStorage.setItem('user_pincode', this.state.pincode);
             
-            // Save Warehouse info if returned
-            if(res.warehouse) {
-                localStorage.setItem('current_warehouse_id', res.warehouse.id);
+            if(res.warehouse_id) {
+                localStorage.setItem('current_warehouse_id', res.warehouse_id);
             }
 
-            const navLoc = document.getElementById('header-location');
-            if(navLoc) navLoc.innerText = document.getElementById('loc-title').innerText;
-
-            Toast.success("Location Confirmed!");
+            Toast.success(res.message || "Location Confirmed!");
 
             if(this.callback) {
                 this.callback(this.state);
@@ -195,7 +185,7 @@ const LocationPicker = {
 
         } catch (e) {
             console.error("Service Check Failed", e);
-            Toast.error("Service check failed. Please try again.");
+            Toast.error(e.message || "Service check failed.");
             btn.innerText = originalText;
             btn.disabled = false;
         }

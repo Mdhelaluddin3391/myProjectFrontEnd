@@ -72,76 +72,142 @@
         </div>
     </main>
 
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_REAL_GOOGLE_API_KEY_HERE&callback=initMap" async
-        defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_REAL_GOOGLE_API_KEY&callback=initMap" async defer></script>
     <script src="/assets/js/config.js"></script>
+    <script src="/assets/js/utils/toast.js"></script>
+    <script src="/assets/js/utils/formatters.js"></script>
     <script src="/assets/js/services/api.service.js"></script>
     <script src="/assets/js/layout/main-layout.js"></script>
 
     <script>
         let map, marker, orderId, socket;
-        let socket = null;
 
+        // Initialize Map
         window.initMap = function () {
             map = new google.maps.Map(document.getElementById('map'), {
-                center: { lat: 12.9716, lng: 77.5946 },
-                zoom: 14,
-                disableDefaultUI: true
+                center: { lat: 12.9716, lng: 77.5946 }, // Default Bangalore
+                zoom: 13,
+                disableDefaultUI: true,
+                styles: [ { "featureType": "poi", "stylers": [ { "visibility": "off" } ] } ]
             });
-            marker = new google.maps.Marker({ map: map });
+            
+            // Customer Marker (Destination)
+            marker = new google.maps.Marker({ map: map, title: "Delivery Location" });
 
-            // Start Tracking
+            // Rider Marker (Will add when available)
+            window.riderMarker = new google.maps.Marker({ 
+                map: map, 
+                icon: 'https://cdn-icons-png.flaticon.com/32/3063/3063823.png', // Bike Icon
+                title: "Rider"
+            });
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
             orderId = new URLSearchParams(window.location.search).get('id');
-            if (orderId) {
-                fetchStatus();
-                setInterval(fetchStatus, 10000); // Poll every 10s
+            if (!orderId) {
+                alert("No Order ID provided");
+                window.location.href = '/orders.html';
+                return;
+            }
+
+            document.getElementById('t-id').innerText = `Order #${orderId.slice(0,8).toUpperCase()}`;
+            
+            // Initial Fetch
+            fetchOrderDetails();
+            
+            // Poll for status updates every 15 seconds
+            setInterval(fetchOrderDetails, 15000);
+        });
+
+        async function fetchOrderDetails() {
+            try {
+                const order = await ApiService.get(`/orders/${orderId}/`);
+                
+                // 1. Update Timeline
+                updateTimeline(order.status);
+
+                // 2. Update Map Destination
+                if (map && order.delivery_address_json && order.delivery_address_json.latitude) {
+                    const dest = { 
+                        lat: parseFloat(order.delivery_address_json.latitude), 
+                        lng: parseFloat(order.delivery_address_json.longitude) 
+                    };
+                    marker.setPosition(dest);
+                    if(!window.hasCentered) {
+                        map.panTo(dest);
+                        window.hasCentered = true;
+                    }
+                }
+
+                // 3. Handle Rider Info
+                if (order.rider && (order.status === 'out_for_delivery' || order.status === 'dispatched')) {
+                    const rBox = document.getElementById('rider-info');
+                    rBox.classList.remove('d-none');
+                    rBox.querySelector('.font-weight-bold').innerText = order.rider.name || 'Delivery Partner';
+                    rBox.querySelector('a').href = `tel:${order.rider.phone}`;
+
+                    // Connect WebSocket if not connected
+                    if (!socket) connectTrackingSocket(orderId);
+                }
+
+            } catch (e) {
+                console.error("Tracking Error", e);
             }
         }
 
-        async function connectTrackingSocket(orderId) {
-            // 1. Cleanup existing connection if any
-            if (socket) {
-                socket.close();
-            }
+        function updateTimeline(status) {
+            // Reset classes
+            document.querySelectorAll('.timeline-step').forEach(el => el.classList.remove('active'));
 
+            const statusMap = {
+                'pending': [],
+                'confirmed': ['step-confirmed'],
+                'packing': ['step-confirmed'],
+                'packed': ['step-confirmed', 'step-packed'],
+                'dispatched': ['step-confirmed', 'step-packed', 'step-dispatched'],
+                'out_for_delivery': ['step-confirmed', 'step-packed', 'step-dispatched'],
+                'delivered': ['step-confirmed', 'step-packed', 'step-dispatched', 'step-delivered']
+            };
+
+            const activeIds = statusMap[status.toLowerCase()] || [];
+            activeIds.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.classList.add('active');
+            });
+        }
+
+        async function connectTrackingSocket(orderId) {
             try {
                 const res = await ApiService.post('/auth/ws/ticket/');
                 const ticket = res.ticket;
-                const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-                socket = new WebSocket(`${wsProtocol}://${window.location.host}/ws/orders/${orderId}/?ticket=${ticket}`);
+                const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+                // Adjust Host if running locally vs production
+                const host = window.APP_CONFIG.API_BASE_URL.split('//')[1].split('/')[0]; 
+                
+                socket = new WebSocket(`${protocol}://${host}/ws/orders/${orderId}/?ticket=${ticket}`);
 
+                socket.onopen = () => console.log("Live Tracking Connected");
+                
                 socket.onmessage = (e) => {
                     const data = JSON.parse(e.data);
+                    
                     if (data.type === 'rider_location') {
-                        updateRiderMarker(data.lat, data.lng);
-                    } else if (data.type === 'status_update') {
+                        const pos = { lat: parseFloat(data.lat), lng: parseFloat(data.lng) };
+                        if (window.riderMarker) window.riderMarker.setPosition(pos);
+                    } 
+                    else if (data.type === 'status_update') {
                         updateTimeline(data.status);
-                        if (data.status === 'delivered') {
-                            socket.close(); // Cleanup on completion
+                        if(data.status === 'delivered') {
+                            Toast.success("Order Delivered!");
+                            socket.close();
                         }
                     }
                 };
 
-                socket.onclose = () => console.log("Tracking connection closed.");
-                socket.onerror = (err) => console.error("WebSocket Error:", err);
-
             } catch (err) {
-                Toast.error("Failed to connect to live tracking.");
+                console.warn("WebSocket connection failed", err);
             }
         }
-
-        function updateRiderMarker(lat, lng) {
-            const pos = { lat: parseFloat(lat), lng: parseFloat(lng) };
-            if (marker) {
-                marker.setPosition(pos);
-                map.panTo(pos);
-            }
-        }
-
-
-        window.addEventListener('beforeunload', () => {
-    if (socket) socket.close();
-});
     </script>
 </body>
 
