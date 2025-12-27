@@ -28,6 +28,7 @@ async function loadCart() {
         document.getElementById('item-count').innerText = `${cart.items.length} Items`;
         
         // Render Items
+        // [FIX] Use item.sku (String) for changeQty calls
         list.innerHTML = cart.items.map(item => `
             <div class="card cart-item">
                 <img src="${item.sku_image || 'https://via.placeholder.com/80'}" class="item-img">
@@ -37,11 +38,11 @@ async function loadCart() {
                     <div class="item-price">${Formatters.currency(item.total_price)}</div>
                 </div>
                 <div class="qty-control">
-                    <button class="qty-btn-sm" onclick="changeQty('${item.sku_id}', ${item.quantity - 1})">
+                    <button class="qty-btn-sm" onclick="changeQty('${item.sku}', ${item.quantity - 1})">
                         ${item.quantity === 1 ? '<i class="fas fa-trash"></i>' : '-'}
                     </button>
                     <span>${item.quantity}</span>
-                    <button class="qty-btn-sm" onclick="changeQty('${item.sku_id}', ${item.quantity + 1})">+</button>
+                    <button class="qty-btn-sm" onclick="changeQty('${item.sku}', ${item.quantity + 1})">+</button>
                 </div>
             </div>
         `).join('');
@@ -56,7 +57,7 @@ async function loadCart() {
     }
 }
 
-window.changeQty = async function(skuId, newQty) {
+window.changeQty = async function(skuCode, newQty) {
     try {
         if (newQty <= 0) {
             if(!confirm("Remove item from cart?")) return;
@@ -64,7 +65,7 @@ window.changeQty = async function(skuId, newQty) {
         
         // Show loading state implicitly by maybe blurring content, 
         // but for now we just wait for reload
-        await CartService.updateItem(skuId, newQty);
+        await CartService.updateItem(skuCode, newQty);
         await loadCart(); // Refresh UI
         
     } catch (e) {

@@ -164,13 +164,14 @@ async function loadFlashSales() {
                     <span>${Formatters.currency(item.discounted_price)}</span>
                     <span class="f-mrp">${Formatters.currency(item.original_price)}</span>
                 </div>
-                <button onclick="addToCart('${item.sku_id}', this)" class="btn btn-sm btn-primary w-100 mt-2">ADD</button>
+                <button onclick="addToCart('${item.sku}', this)" class="btn btn-sm btn-primary w-100 mt-2">ADD</button>
             </div>
         `).join('');
     } catch (e) { section.style.display = 'none'; }
 }
 
 function createProductCard(p) {
+    // [FIX] Use p.sku for addToCart
     return `
         <div class="card product-card" style="padding:10px; border:1px solid #eee; box-shadow:none;">
             <a href="/product.html?code=${p.sku || p.id}">
@@ -181,7 +182,7 @@ function createProductCard(p) {
             </a>
             <div class="d-flex justify-between align-center mt-2">
                 <div style="font-weight:700;">${Formatters.currency(p.sale_price || p.selling_price || p.price)}</div>
-                <button class="btn btn-sm btn-outline-primary" onclick="addToCart('${p.id}', this)">ADD</button>
+                <button class="btn btn-sm btn-outline-primary" onclick="addToCart('${p.sku}', this)">ADD</button>
             </div>
         </div>
     `;
@@ -202,7 +203,8 @@ function startFlashTimer() {
     }, 1000);
 }
 
-window.addToCart = async function(skuId, btn) {
+// [FIX] Accepts SKU Code string
+window.addToCart = async function(skuCode, btn) {
     if (!localStorage.getItem(APP_CONFIG.STORAGE_KEYS.TOKEN)) {
         Toast.warning("Login required");
         setTimeout(() => window.location.href = APP_CONFIG.ROUTES.LOGIN, 1000);
@@ -212,12 +214,13 @@ window.addToCart = async function(skuId, btn) {
     btn.innerText = "..";
     btn.disabled = true;
     try {
-        await CartService.addItem(skuId, 1);
+        // CartService now expects SKU string and handles warehouse context
+        await CartService.addItem(skuCode, 1);
         Toast.success("Added");
         btn.innerText = "✔";
         setTimeout(() => { btn.innerText = "ADD"; btn.disabled = false; }, 1500);
     } catch (e) {
-        Toast.error("Failed");
+        Toast.error(e.message || "Failed");
         btn.innerText = originalText;
         btn.disabled = false;
     }

@@ -20,10 +20,6 @@ async function loadProduct(skuCode) {
     try {
         // Fetch logic
         // Endpoint supports lookup by ID or Code usually, strictly speaking depends on backend
-        // Assuming /catalog/skus/{id}/ works. If code is used, backend usually filters.
-        // Let's assume the param 'code' passed is actually the ID for simplicity 
-        // OR the backend route is /catalog/skus/{code}/
-        
         currentProduct = await ApiService.get(`/catalog/skus/${skuCode}/`);
         
         // Render
@@ -69,19 +65,13 @@ async function addToCart() {
     }
 
     const btn = document.getElementById('add-btn');
-    const whId = localStorage.getItem(APP_CONFIG.STORAGE_KEYS.WAREHOUSE_ID);
     const originalText = btn.innerHTML;
     btn.disabled = true;
     btn.innerText = "Adding...";
 
-    await ApiService.post('/orders/cart/add/', { 
-        sku: currentProduct.sku, // Send SKU String (e.g. "MILK-01")
-        quantity: quantity,
-        warehouse_id: whId
-    });
-
     try {
-        await CartService.addItem(currentProduct.id, quantity);
+        // [FIX] Use CartService (centralized logic) and pass SKU string
+        await CartService.addItem(currentProduct.sku, quantity);
         Toast.success("Added to Cart Successfully");
     } catch (e) {
         Toast.error(e.message || "Failed to add to cart");
