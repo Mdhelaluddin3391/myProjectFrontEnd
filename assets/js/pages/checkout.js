@@ -10,9 +10,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
     
+    // Ensure config is loaded if not already (redundant safety)
+    if (window.AppConfigService && !window.AppConfigService.isLoaded) {
+        await window.AppConfigService.load();
+    }
+
     await Promise.all([loadAddresses(), loadSummary()]);
     document.getElementById('place-order-btn').addEventListener('click', placeOrder);
     
+    // Attempt initial resolution from stored location
     const lat = localStorage.getItem('user_lat');
     const lng = localStorage.getItem('user_lng');
     const city = localStorage.getItem('user_city');
@@ -53,13 +59,12 @@ async function loadAddresses() {
             return;
         }
 
-        if (!selectedAddressId) {
-            const def = addresses.find(a => a.is_default) || addresses[0];
-            selectAddress(def.id, def.latitude, def.longitude, def.city, null);
-        }
-
         container.innerHTML = addresses.map(addr => `
-            <div class="address-card ${selectedAddressId == addr.id ? 'active' : ''}" 
+            <div class="address-card ${addr.is_default ? 'active' : ''}" 
+                 data-id="${addr.id}"
+                 data-lat="${addr.latitude}"
+                 data-lng="${addr.longitude}"
+                 data-city="${addr.city}"
                  onclick="selectAddress('${addr.id}', ${addr.latitude}, ${addr.longitude}, '${addr.city}', this)">
                 <div class="d-flex justify-between">
                     <strong>${addr.label}</strong>
@@ -70,6 +75,17 @@ async function loadAddresses() {
                 </p>
             </div>
         `).join('');
+
+        // Auto-select default
+        const def = addresses.find(a => a.is_default) || addresses[0];
+        if (def) {
+            selectedAddressId = def.id;
+            // Ensure UI marks it active if not already
+            const defEl = container.querySelector(`.address-card[data-id="${def.id}"]`);
+            if (defEl) defEl.classList.add('active');
+            resolveWarehouse(def.latitude, def.longitude, def.city);
+        }
+
     } catch (e) {
         container.innerHTML = '<p class="text-danger">Failed to load addresses</p>';
     }
@@ -114,12 +130,32 @@ async function resolveWarehouse(lat, lng, city) {
     } catch (e) {
         resolvedWarehouseId = null;
         placeOrderBtn.innerText = "Service Error";
+        console.error("Warehouse check error", e);
     }
 }
 
 async function placeOrder() {
-    if (!selectedAddressId || !resolvedWarehouseId) {
-        return Toast.warning("Please select a serviceable address");
+    if (!selectedAddressId) {
+        return Toast.warning("Please select a delivery address");
+    }
+
+    // [AUDIT FIX] Safety check: Ensure warehouse is resolved
+    if (!resolvedWarehouseId) {
+        // Fallback: Try to resolve using active address data
+        const addrEl = document.querySelector('.address-card.active');
+        if (addrEl) {
+            const lat = addrEl.dataset.lat;
+            const lng = addrEl.dataset.lng;
+            const city = addrEl.dataset.city;
+            if (lat && lng) {
+                Toast.info("Verifying serviceability...");
+                await resolveWarehouse(lat, lng, city);
+            }
+        }
+        
+        if (!resolvedWarehouseId) {
+            return Toast.error("Service check failed. Please select a serviceable address.");
+        }
     }
 
     const btn = document.getElementById('place-order-btn');

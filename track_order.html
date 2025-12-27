@@ -72,7 +72,16 @@
 
     <script>
         // [AUDIT FIX] Dynamic Google Maps Loading with Safety Check
-        function loadMapsScript() {
+        async function loadMapsScript() {
+            // Ensure Config is loaded before accessing Key
+            if (window.AppConfigService && !window.AppConfigService.isLoaded) {
+                try {
+                    await window.AppConfigService.load();
+                } catch (e) {
+                    console.error("Config load failed in map script");
+                }
+            }
+
             const key = window.APP_CONFIG.GOOGLE_MAPS_KEY || '';
 
             // Check if key is missing or is the default placeholder
@@ -121,13 +130,16 @@
             }
         };
 
-        document.addEventListener('DOMContentLoaded', () => {
-            loadMapsScript(); // Trigger Map Load
-
+        // Modified initialization to support async config loading
+        document.addEventListener('DOMContentLoaded', async () => {
             orderId = new URLSearchParams(window.location.search).get('id');
             if (!orderId) return window.location.href = '/orders.html';
 
             document.getElementById('t-id').innerText = `Order #${orderId}`;
+            
+            // Wait for maps script logic which waits for config
+            await loadMapsScript(); 
+            
             fetchOrderDetails();
             connectTrackingSocket();
         });

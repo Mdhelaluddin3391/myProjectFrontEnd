@@ -1,10 +1,15 @@
 /* assets/js/layout/main-layout.js */
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // [AUDIT FIX] Centralized Auth Guard
+    // 1. Bootstrap Configuration (Critical)
+    if (window.AppConfigService) {
+        await window.AppConfigService.load();
+    }
+
+    // 2. Centralized Auth Guard
     enforceAuth();
 
-    // 1. Load Components
+    // 3. Load Components
     await loadComponent('/components/navbar.html', 'navbar-placeholder');
     await loadComponent('/components/footer.html', 'footer-placeholder');
 
@@ -19,7 +24,6 @@ function enforceAuth() {
     
     if (protectedRoutes.some(route => path.includes(route))) {
         if (!localStorage.getItem(APP_CONFIG.STORAGE_KEYS.TOKEN)) {
-            // Stop rendering immediately if possible (body style hidden handled in CSS is best, but JS redirect here)
             window.location.href = APP_CONFIG.ROUTES.LOGIN;
         }
     }
