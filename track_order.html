@@ -79,7 +79,8 @@
     <script src="/assets/js/layout/main-layout.js"></script>
 
     <script>
-        let map, marker, orderId, socket;;
+        let map, marker, orderId, socket;
+        let socket = null;
 
         window.initMap = function () {
             map = new google.maps.Map(document.getElementById('map'), {
@@ -97,24 +98,36 @@
             }
         }
 
-        function connectTrackingSocket(orderId) {
-            // 1. Get a one-time ticket for secure WS auth
-            ApiService.post('/auth/ws/ticket/').then(res => {
+        async function connectTrackingSocket(orderId) {
+            // 1. Cleanup existing connection if any
+            if (socket) {
+                socket.close();
+            }
+
+            try {
+                const res = await ApiService.post('/auth/ws/ticket/');
                 const ticket = res.ticket;
-                // 2. Connect to the modern WebSocket route
-                socket = new WebSocket(`ws://${window.location.host}/ws/orders/${orderId}/?ticket=${ticket}`);
+                const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+                socket = new WebSocket(`${wsProtocol}://${window.location.host}/ws/orders/${orderId}/?ticket=${ticket}`);
 
                 socket.onmessage = (e) => {
                     const data = JSON.parse(e.data);
                     if (data.type === 'rider_location') {
-                        // MODERN: Move rider marker smoothly on the map
                         updateRiderMarker(data.lat, data.lng);
                     } else if (data.type === 'status_update') {
-                        // Live status changes (e.g. Out for delivery)
                         updateTimeline(data.status);
+                        if (data.status === 'delivered') {
+                            socket.close(); // Cleanup on completion
+                        }
                     }
                 };
-            });
+
+                socket.onclose = () => console.log("Tracking connection closed.");
+                socket.onerror = (err) => console.error("WebSocket Error:", err);
+
+            } catch (err) {
+                Toast.error("Failed to connect to live tracking.");
+            }
         }
 
         function updateRiderMarker(lat, lng) {
@@ -124,6 +137,11 @@
                 map.panTo(pos);
             }
         }
+
+
+        window.addEventListener('beforeunload', () => {
+    if (socket) socket.close();
+});
     </script>
 </body>
 

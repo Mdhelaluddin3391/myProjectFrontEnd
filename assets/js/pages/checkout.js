@@ -60,19 +60,26 @@ window.selectAddress = function(id, lat, lng, city, el) {
 };
 
 async function resolveWarehouse(lat, lng, city) {
+    const placeOrderBtn = document.getElementById('place-order-btn');
     try {
+        placeOrderBtn.disabled = true;
         const res = await ApiService.post('/warehouse/find-serviceable/', {
             latitude: lat, longitude: lng, city: city
         });
+
         if (res.serviceable) {
             resolvedWarehouseId = res.warehouse.id;
-            document.getElementById('place-order-btn').disabled = false;
+            placeOrderBtn.disabled = false;
+            placeOrderBtn.innerText = "Place Order";
         } else {
             resolvedWarehouseId = null;
-            Toast.error("Selected address is not serviceable");
-            document.getElementById('place-order-btn').disabled = true;
+            placeOrderBtn.innerText = "Area Not Serviceable";
+            Toast.error("We do not deliver to this location yet.");
         }
-    } catch (e) { console.error("Warehouse resolution failed"); }
+    } catch (e) {
+        console.error("Warehouse resolution failed", e);
+        placeOrderBtn.innerText = "Service Error";
+    }
 }
 
 async function saveAddress(e) {
