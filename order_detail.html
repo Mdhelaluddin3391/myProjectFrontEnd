@@ -153,17 +153,17 @@
                     trackBtn.classList.add('d-none');
                 }
 
-                // --- NEW: Cancellation UI Implementation ---
+                // --- Cancellation UI Implementation ---
                 const actionContainer = document.querySelector('.text-right');
 
-                // Sirf in status mein cancel allow karein
+                // Allow cancel only for specific statuses
                 if (['created', 'confirmed'].includes(order.status)) {
                     const cancelBtn = document.createElement('button');
                     cancelBtn.className = 'btn btn-outline-danger btn-sm mt-2 ml-2';
                     cancelBtn.innerHTML = '<i class="fas fa-times"></i> Cancel Order';
                     cancelBtn.onclick = () => confirmCancellation(order.id);
 
-                    // Warning Text (Backend Abuse Logic ke liye)
+                    // Warning Text
                     const warningText = document.createElement('div');
                     warningText.className = 'text-muted small mt-1';
                     warningText.style.fontSize = '0.75rem';
@@ -172,7 +172,6 @@
                     actionContainer.appendChild(cancelBtn);
                     actionContainer.appendChild(warningText);
                 }
-                // -------------------------------------------
 
                 // Items Rendering
                 document.getElementById('od-items').innerHTML = order.items.map(i => `
@@ -232,7 +231,7 @@
             }
         });
 
-        // --- NEW: Cancellation Function with Abuse Warning ---
+        // --- NEW: Hardened Cancellation Function ---
         async function confirmCancellation(orderId) {
             const confirmed = confirm(
                 "⚠️ Are you sure you want to cancel?\n\n" +
@@ -247,17 +246,25 @@
                 setTimeout(() => window.location.reload(), 1000);
 
             } catch (e) {
-                // [FIXED] Specific handling for Blocked User
-                if (e.message && e.message.toLowerCase().includes("blocked")) {
-                    // Backend se aaya hua specific message show karein (e.g., "Try again in 23h 50m")
-                    alert("⛔ ACCOUNT BLOCKED\n\n" + e.message);
+                // Parse error object string from ApiService
+                let errorMsg = e.message;
+                try {
+                    const parsed = JSON.parse(e.message);
+                    if (parsed.error && parsed.error.message) {
+                        errorMsg = parsed.error.message;
+                    }
+                } catch(parseErr) {
+                    // Fallback if not JSON
+                }
+
+                // Handle Abuse Blocking specifically
+                if (errorMsg.toLowerCase().includes("blocked")) {
+                    alert("⛔ ACCOUNT ACTION\n\n" + errorMsg);
                 } else {
-                    Toast.error(e.message || "Failed to cancel order");
+                    Toast.error(errorMsg || "Failed to cancel order");
                 }
             }
         }
-
-
     </script>
 </body>
 

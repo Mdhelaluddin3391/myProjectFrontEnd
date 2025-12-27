@@ -1,9 +1,23 @@
 /**
- * Centralized API Service
- * Handles headers, auth tokens, error parsing, and response formatting.
+ * Centralized API Service (Production Hardened)
+ * - Auto-injects Authorization headers
+ * - Handles 401 Token Refresh automatically
+ * - Injects Idempotency-Key for mutating requests
+ * - Centralized Error Handling
  */
 class ApiService {
-    static getHeaders(uploadFile = false) {
+    static isRefreshing = false;
+    static refreshSubscribers = [];
+
+    // Generate UUIDv4 for Idempotency
+    static uuidv4() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
+    static getHeaders(uploadFile = false, method = 'GET') {
         const headers = {};
         if (!uploadFile) {
             headers['Content-Type'] = 'application/json';
@@ -13,17 +27,23 @@ class ApiService {
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
+
+        // [AUDIT FIX] Idempotency for mutating methods
+        if (['POST', 'PUT', 'PATCH'].includes(method.toUpperCase())) {
+            headers['Idempotency-Key'] = this.uuidv4();
+        }
+
         return headers;
     }
 
-    static async request(endpoint, method = 'GET', body = null) {
+    static async request(endpoint, method = 'GET', body = null, isRetry = false) {
         // Ensure endpoint starts with /
         const safeEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
         const url = `${APP_CONFIG.API_BASE_URL}${safeEndpoint}`;
 
         const options = {
             method,
-            headers: this.getHeaders(),
+            headers: this.getHeaders(false, method),
         };
 
         if (body) {
@@ -33,31 +53,90 @@ class ApiService {
         try {
             const response = await fetch(url, options);
 
-            // Handle 401 Unauthorized (Session Expired)
-            if (response.status === 401) {
-                console.warn("Session expired. Redirecting to login.");
-                localStorage.removeItem(APP_CONFIG.STORAGE_KEYS.TOKEN);
-                localStorage.removeItem(APP_CONFIG.STORAGE_KEYS.USER);
-                window.location.href = APP_CONFIG.ROUTES.LOGIN;
-                return;
+            // [AUDIT FIX] Handle 401 Unauthorized (Token Refresh Flow)
+            if (response.status === 401 && !isRetry) {
+                if (this.isRefreshing) {
+                    // If already refreshing, queue this request
+                    return new Promise((resolve) => {
+                        this.refreshSubscribers.push(() => {
+                            resolve(this.request(endpoint, method, body, true));
+                        });
+                    });
+                }
+
+                this.isRefreshing = true;
+                const success = await this.refreshToken();
+                this.isRefreshing = false;
+
+                if (success) {
+                    this.onRefreshed();
+                    return this.request(endpoint, method, body, true);
+                } else {
+                    this.logoutAndRedirect();
+                    return; // Stop execution
+                }
             }
 
             const data = await response.json();
 
             if (!response.ok) {
-                // Extract error message from Django DRF format
+                // Normalize DRF errors
                 const errorMsg = data.detail || 
                                  data.error || 
                                  (data.non_field_errors ? data.non_field_errors[0] : 'An unexpected error occurred');
-                throw new Error(errorMsg);
+                
+                // Route to error reporting hook if needed (e.g. Sentry)
+                if (window.reportError) window.reportError(errorMsg, endpoint);
+                
+                throw new Error(typeof errorMsg === 'object' ? JSON.stringify(errorMsg) : errorMsg);
             }
 
             return data;
 
         } catch (error) {
-            console.error(`API Error [${method} ${endpoint}]:`, error);
-            throw error; // Re-throw for component handling
+            // Suppress logs in production
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                console.error(`API Error [${method} ${endpoint}]:`, error);
+            }
+            throw error;
         }
+    }
+
+    static async refreshToken() {
+        const refresh = localStorage.getItem(APP_CONFIG.STORAGE_KEYS.REFRESH);
+        if (!refresh) return false;
+
+        try {
+            // Direct fetch to avoid recursion
+            const response = await fetch(`${APP_CONFIG.API_BASE_URL}/auth/refresh/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refresh })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                localStorage.setItem(APP_CONFIG.STORAGE_KEYS.TOKEN, data.access);
+                // Some backends rotate refresh tokens too
+                if (data.refresh) {
+                    localStorage.setItem(APP_CONFIG.STORAGE_KEYS.REFRESH, data.refresh);
+                }
+                return true;
+            }
+        } catch (e) {
+            console.warn("Token refresh failed", e);
+        }
+        return false;
+    }
+
+    static onRefreshed() {
+        this.refreshSubscribers.forEach((callback) => callback());
+        this.refreshSubscribers = [];
+    }
+
+    static logoutAndRedirect() {
+        localStorage.clear();
+        window.location.href = APP_CONFIG.ROUTES.LOGIN;
     }
 
     static get(endpoint) { return this.request(endpoint, 'GET'); }

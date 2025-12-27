@@ -26,7 +26,6 @@ function enforceAuth() {
 }
 
 async function loadComponent(url, elementId) {
-// ... (rest of file remains unchanged)
     const element = document.getElementById(elementId);
     if (!element) return;
     try {
@@ -62,7 +61,6 @@ function initializeGlobalEvents() {
     });
 }
 
-// ... (rest of functions: loadNavbarCategories, updateAuthUI, updateCartCount, logout)
 async function loadNavbarCategories() {
     const nav = document.getElementById('dynamic-navbar');
     if (!nav) return;
@@ -92,15 +90,21 @@ function updateAuthUI() { /* existing logic */ }
 async function updateCartCount() { 
     if(window.CartService) await CartService.updateGlobalCount(); 
 }
+
+// [AUDIT FIX] Robust Logout
 window.logout = async function() {
     if(confirm("Logout?")) {
         try {
-            await ApiService.post('/auth/logout/', { 
-                refresh: localStorage.getItem(APP_CONFIG.STORAGE_KEYS.REFRESH) 
-            });
-        } catch(e) {}
-
-        localStorage.clear();
-        window.location.href = '/auth.html';
+            // Attempt server-side blacklist (Fire and forget)
+            const refresh = localStorage.getItem(APP_CONFIG.STORAGE_KEYS.REFRESH);
+            if (refresh) {
+                await ApiService.post('/auth/logout/', { refresh: refresh });
+            }
+        } catch(e) {
+            console.warn("Logout API failed, proceeding with local cleanup");
+        } finally {
+            localStorage.clear();
+            window.location.href = '/auth.html';
+        }
     }
 }

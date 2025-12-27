@@ -71,20 +71,32 @@
     <script src="/assets/js/layout/main-layout.js"></script>
 
     <script>
-        // [AUDIT FIX] Dynamic Google Maps Loading
+        // [AUDIT FIX] Dynamic Google Maps Loading with Safety Check
         function loadMapsScript() {
-            const script = document.createElement('script');
             const key = window.APP_CONFIG.GOOGLE_MAPS_KEY || '';
 
-            if (!key || key === 'YOUR_ACTUAL_GOOGLE_MAPS_KEY_HERE') {
-                console.error("Google Maps API Key missing in config.js");
-                document.getElementById('map').innerHTML = '<div style="padding:20px; text-align:center;">Map Configuration Missing</div>';
+            // Check if key is missing or is the default placeholder
+            if (!key || key === 'REPLACE_WITH_REAL_KEY_DURING_BUILD' || key === 'YOUR_ACTUAL_GOOGLE_MAPS_KEY_HERE') {
+                console.warn("Google Maps API Key not configured.");
+                document.getElementById('map').innerHTML = `
+                    <div style="height:100%; display:flex; align-items:center; justify-content:center; flex-direction:column; color:#666;">
+                        <i class="fas fa-map-marked-alt fa-3x mb-3"></i>
+                        <p>Map unavailable (Configuration Pending)</p>
+                    </div>`;
                 return;
             }
 
+            if (document.getElementById('gmaps-script')) return; // Prevent double load
+
+            const script = document.createElement('script');
+            script.id = 'gmaps-script';
             script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&callback=initMap`;
             script.async = true;
             script.defer = true;
+            script.onerror = () => {
+                console.error("Failed to load Google Maps script.");
+                document.getElementById('map').innerHTML = '<div style="padding:20px; text-align:center;">Map Load Error</div>';
+            };
             document.body.appendChild(script);
         }
 
@@ -92,17 +104,21 @@
         let reconnectInterval = 1000;
 
         window.initMap = function () {
-            map = new google.maps.Map(document.getElementById('map'), {
-                center: { lat: 12.9716, lng: 77.5946 },
-                zoom: 13,
-                disableDefaultUI: true
-            });
-            marker = new google.maps.Marker({ map: map, title: "Destination" });
-            riderMarker = new google.maps.Marker({
-                map: map,
-                icon: 'https://cdn-icons-png.flaticon.com/32/3063/3063823.png',
-                title: "Rider"
-            });
+            try {
+                map = new google.maps.Map(document.getElementById('map'), {
+                    center: { lat: 12.9716, lng: 77.5946 },
+                    zoom: 13,
+                    disableDefaultUI: true
+                });
+                marker = new google.maps.Marker({ map: map, title: "Destination" });
+                riderMarker = new google.maps.Marker({
+                    map: map,
+                    icon: 'https://cdn-icons-png.flaticon.com/32/3063/3063823.png',
+                    title: "Rider"
+                });
+            } catch (e) {
+                console.error("Map Init Error:", e);
+            }
         };
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -121,7 +137,8 @@
                 const order = await ApiService.get(`/orders/${orderId}/`);
                 updateTimeline(order.status);
 
-                if (order.delivery_address_json && map) {
+                // Safe access to map object in case it failed to load
+                if (order.delivery_address_json && typeof map !== 'undefined') {
                     const pos = {
                         lat: parseFloat(order.delivery_address_json.lat),
                         lng: parseFloat(order.delivery_address_json.lng)
@@ -167,7 +184,7 @@
                     const data = JSON.parse(e.data);
                     if (data.type === 'rider_location') {
                         const pos = { lat: data.lat, lng: data.lng };
-                        if (riderMarker) riderMarker.setPosition(pos);
+                        if (typeof riderMarker !== 'undefined') riderMarker.setPosition(pos);
                     } else if (data.type === 'status_update') {
                         updateTimeline(data.status);
                         Toast.info(data.message);
