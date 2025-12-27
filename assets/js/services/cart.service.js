@@ -7,54 +7,65 @@ class CartService {
         const whId = localStorage.getItem(APP_CONFIG.STORAGE_KEYS.WAREHOUSE_ID);
         
         if (!whId) {
-            Toast.error("Please select a location first.");
+            Toast.error("Please select a delivery location first.");
+            // Open location picker if available
+            if(window.LocationPicker) window.LocationPicker.open();
             throw new Error("Location not selected");
         }
 
         try {
-            // [FIX] Added force_clear param
             const res = await ApiService.post('/orders/cart/add/', { 
                 sku: skuCode, 
                 quantity: quantity,
                 warehouse_id: whId,
                 force_clear: forceClear
             });
+            
+            // Notify app
             this.updateGlobalCount(); 
             return res;
+
         } catch (e) {
-            // [FIX] Intelligent Error Handling for Warehouse Conflict
+            // [FIX] Robust Error Parsing for nested API responses
             let errData = {};
             try { 
-                // ApiService throws Error(JSON.stringify(msg)), so we parse it
+                // ApiService often throws Error(JSON.stringify(data))
                 errData = JSON.parse(e.message); 
             } catch(parseErr) { 
                 errData = { message: e.message }; 
             }
 
-            if (errData.code === 'warehouse_conflict') {
-                if (confirm(errData.message)) {
-                    // Recursive retry with force flag
+            // Handle Warehouse Conflict (HTTP 409 from Backend)
+            if (errData.code === 'warehouse_conflict' || (errData.message && errData.message.includes('different store'))) {
+                
+                const confirmMsg = errData.message || "Your cart contains items from a different store. Clear cart to proceed?";
+                
+                if (confirm(confirmMsg)) {
+                    // Recursive retry with force_clear=true
+                    console.log("Clearing cart and retrying...");
                     return this.addItem(skuCode, quantity, true); 
+                } else {
+                    // User cancelled
+                    throw new Error("Cancelled by user");
                 }
             }
+            
+            // Re-throw other errors
             throw e;
         }
     }
 
     static async updateItem(skuCode, quantity) {
-        // Re-using add endpoint as per backend logic (add/update are unified)
         return await this.addItem(skuCode, quantity);
     }
 
     static async removeItem(skuCode) {
-        // Sending 0 removes item
         return await this.addItem(skuCode, 0); 
     }
 
     static async updateGlobalCount() {
         const badge = document.getElementById('cart-badge');
         
-        // Agar user login nahi hai
         if (!localStorage.getItem(APP_CONFIG.STORAGE_KEYS.TOKEN)) {
             if(badge) badge.style.display = 'none';
             return;
@@ -69,14 +80,13 @@ class CartService {
                 badge.style.display = count > 0 ? 'flex' : 'none';
             }
 
-            // NEW: Dispatch event to notify entire app
             window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: count } }));
 
         } catch (e) {
+            // Silent fail for background sync
             console.warn("Failed to sync cart count");
         }
     }
 }
 
-// Expose globally
 window.CartService = CartService;
