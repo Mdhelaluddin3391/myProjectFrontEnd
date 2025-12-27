@@ -13,14 +13,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('add-btn').addEventListener('click', addToCart);
 });
 
+
 async function loadProduct(skuCode) {
     const loader = document.getElementById('loader');
     const content = document.getElementById('product-content');
 
     try {
+        // [FIX] Inject Warehouse Context for Accurate Pricing
+        const whId = localStorage.getItem(APP_CONFIG.STORAGE_KEYS.WAREHOUSE_ID);
+        let url = `/catalog/skus/${skuCode}/`;
+        if (whId) {
+            url += `?warehouse_id=${whId}`;
+        }
+
         // Fetch logic
-        // Endpoint supports lookup by ID or Code usually, strictly speaking depends on backend
-        currentProduct = await ApiService.get(`/catalog/skus/${skuCode}/`);
+        currentProduct = await ApiService.get(url);
         
         // Render
         document.getElementById('p-image').src = currentProduct.image_url || 'https://via.placeholder.com/400';
@@ -29,6 +36,7 @@ async function loadProduct(skuCode) {
         document.getElementById('p-unit').innerText = currentProduct.unit;
         document.getElementById('p-desc').innerText = currentProduct.description || "Fresh and high quality product delivered to your doorstep.";
         
+        // Price Rendering (Now reflects Warehouse specific price if available)
         document.getElementById('p-price').innerText = Formatters.currency(currentProduct.sale_price);
         
         if (currentProduct.mrp && currentProduct.mrp > currentProduct.sale_price) {
