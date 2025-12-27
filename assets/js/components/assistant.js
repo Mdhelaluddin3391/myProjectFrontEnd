@@ -45,7 +45,7 @@ class Assistant {
         const send = document.getElementById('ast-send');
         const input = document.getElementById('ast-input');
 
-        if(!trigger) return;
+        if (!trigger) return;
 
         trigger.onclick = () => {
             windowEl.classList.add('active');
@@ -67,24 +67,23 @@ class Assistant {
 
             try {
                 Assistant.addTyping();
-                
+
                 const res = await ApiService.post('/assistant/chat/', { message: text });
-                
+
                 Assistant.removeTyping();
                 Assistant.addMessage(res.reply || "I didn't understand that.", 'bot');
 
                 // Action Handling
-                if (res.action === 'search_results' && res.params.query) {
-                    const viewBtn = document.createElement('button');
-                    viewBtn.className = 'btn btn-sm btn-outline-primary mt-2';
-                    viewBtn.innerText = 'View All Results';
-                    viewBtn.onclick = () => window.location.href = `/search_results.html?q=${encodeURIComponent(res.params.query)}`;
-                    document.getElementById('ast-messages').appendChild(viewBtn);
+                if (res.action === 'track_order' && res.params.order_id) {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-sm btn-primary mt-2';
+                    btn.innerText = 'Track Now';
+                    btn.onclick = () => window.location.href = `/track_order.html?id=${res.params.order_id}`;
+                    document.getElementById('ast-messages').appendChild(btn);
                 }
 
-                if (res.action === 'cart_updated') {
-                    if(window.CartService) await CartService.updateGlobalCount();
-                    Toast.success("Cart updated by AI!");
+                if (res.action === 'view_orders') {
+                    window.location.href = '/orders.html';
                 }
 
             } catch (e) {
@@ -128,5 +127,5 @@ class Assistant {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => Assistant.init(), 1000); 
+    setTimeout(() => Assistant.init(), 1000);
 });

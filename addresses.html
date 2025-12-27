@@ -47,31 +47,40 @@
     </main>
 
     <div id="address-modal" class="modal-overlay d-none">
-    <div class="modal-box">
-        <h3>Add Address</h3>
-        <form id="address-form">
-            <input type="hidden" id="a-lat">
-            <input type="hidden" id="a-lng">
+        <div class="modal-box">
+            <h3>Add Address</h3>
+            <form id="address-form">
+                <input type="hidden" id="a-lat">
+                <input type="hidden" id="a-lng">
 
-            <div class="form-group">
-                <label>Full Address</label>
-                <input type="text" id="a-text" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label>City</label>
-                <input type="text" id="a-city" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label>Pincode</label>
-                <input type="text" id="a-pin" class="form-control" required>
-            </div>
-            <div class="d-flex justify-between mt-3">
-                <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary">Save</button>
-            </div>
-        </form>
+                <div class="form-group">
+                    <label>Full Address</label>
+                    <input type="text" id="a-text" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>City</label>
+                    <input type="text" id="a-city" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Pincode</label>
+                    <input type="text" id="a-pin" class="form-control" required>
+                </div>
+                <div class="d-flex justify-between mt-3">
+                    <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Address Type</label>
+                    <div class="d-flex gap-3">
+                        <label><input type="radio" name="atype" value="HOME" checked> Home</label>
+                        <label><input type="radio" name="atype" value="WORK"> Work</label>
+                        <label><input type="radio" name="atype" value="OTHER"> Other</label>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
 
     <div id="footer-placeholder"></div>
 
@@ -106,43 +115,43 @@
         }
 
         window.openAddressModal = () => {
-        const modal = document.getElementById('address-modal');
-        modal.classList.remove('d-none');
-        
-        // DYNAMIC INJECTION
-        const lat = localStorage.getItem('user_lat');
-        const lng = localStorage.getItem('user_lng');
-        const addrText = localStorage.getItem('user_address_text');
-        const city = localStorage.getItem('user_city');
-        
-        if(lat && lng) {
-            document.getElementById('a-lat').value = lat;
-            document.getElementById('a-lng').value = lng;
-        } else {
-            alert("Location not detected. Please go to Home and set location.");
-            window.location.href = '/index.html';
-            return;
-        }
-        
-        if(addrText) document.getElementById('a-text').value = addrText;
-        if(city) document.getElementById('a-city').value = city;
-    };
+            const modal = document.getElementById('address-modal');
+            modal.classList.remove('d-none');
 
-    document.getElementById('address-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        // Strict Validation
-        const lat = document.getElementById('a-lat').value;
-        if(!lat) { Toast.error("Invalid Location Data"); return; }
+            // DYNAMIC INJECTION
+            const lat = localStorage.getItem('user_lat');
+            const lng = localStorage.getItem('user_lng');
+            const addrText = localStorage.getItem('user_address_text');
+            const city = localStorage.getItem('user_city');
 
-        const payload = {
-            address_line: document.getElementById('a-text').value,
-            label: document.querySelector('input[name="atype"]:checked').value,
-            city: document.getElementById('a-city').value,
-            pincode: document.getElementById('a-pin').value,
-            latitude: lat,
-            longitude: document.getElementById('a-lng').value
+            if (lat && lng) {
+                document.getElementById('a-lat').value = lat;
+                document.getElementById('a-lng').value = lng;
+            } else {
+                alert("Location not detected. Please go to Home and set location.");
+                window.location.href = '/index.html';
+                return;
+            }
+
+            if (addrText) document.getElementById('a-text').value = addrText;
+            if (city) document.getElementById('a-city').value = city;
         };
+
+        document.getElementById('address-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Strict Validation
+            const lat = document.getElementById('a-lat').value;
+            if (!lat) { Toast.error("Invalid Location Data"); return; }
+
+            const payload = {
+                address_line: document.getElementById('a-text').value,
+                label: document.querySelector('input[name="atype"]:checked').value,
+                city: document.getElementById('a-city').value,
+                pincode: document.getElementById('a-pin').value,
+                latitude: lat,
+                longitude: document.getElementById('a-lng').value
+            };
             try {
                 await ApiService.post('/auth/customer/addresses/', payload);
                 Toast.success("Address Added");

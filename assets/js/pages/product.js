@@ -69,9 +69,16 @@ async function addToCart() {
     }
 
     const btn = document.getElementById('add-btn');
+    const whId = localStorage.getItem(APP_CONFIG.STORAGE_KEYS.WAREHOUSE_ID);
     const originalText = btn.innerHTML;
     btn.disabled = true;
     btn.innerText = "Adding...";
+
+    await ApiService.post('/orders/cart/add/', { 
+        sku: currentProduct.sku, // Send SKU String (e.g. "MILK-01")
+        quantity: quantity,
+        warehouse_id: whId
+    });
 
     try {
         await CartService.addItem(currentProduct.id, quantity);
