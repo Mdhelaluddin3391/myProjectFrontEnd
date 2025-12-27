@@ -82,8 +82,15 @@ function updateAuthUI() { /* existing logic */ }
 async function updateCartCount() { 
     if(window.CartService) await CartService.updateGlobalCount(); 
 }
-window.logout = function() {
+window.logout = async function() {
     if(confirm("Logout?")) {
+        try {
+            // Backend ko batao token invalidate kare
+            await ApiService.post('/auth/logout/', { 
+                refresh: localStorage.getItem(APP_CONFIG.STORAGE_KEYS.REFRESH) 
+            });
+        } catch(e) { console.log(e); }
+
         localStorage.clear();
         window.location.href = '/auth.html';
     }

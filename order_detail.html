@@ -234,27 +234,23 @@
 
         // --- NEW: Cancellation Function with Abuse Warning ---
         async function confirmCancellation(orderId) {
-            // 1. Browser Confirm Dialog (Simple Abuse Warning)
             const confirmed = confirm(
                 "⚠️ Are you sure you want to cancel?\n\n" +
-                "NOTE: Frequent cancellations will temporarily block your account from placing new orders."
+                "NOTE: Frequent cancellations will temporarily block your account."
             );
 
             if (!confirmed) return;
 
             try {
-                // Backend API call
                 await ApiService.post(`/orders/${orderId}/cancel/`);
-
                 Toast.success("Order cancelled successfully");
-
-                // Refund info ke liye page reload karein
                 setTimeout(() => window.location.reload(), 1000);
 
             } catch (e) {
-                // Handle specific abuse error from backend
-                if (e.message && e.message.includes("blocked")) {
-                    alert("❌ Action Blocked: You have cancelled too many orders recently. Please try again later.");
+                // [FIXED] Specific handling for Blocked User
+                if (e.message && e.message.toLowerCase().includes("blocked")) {
+                    // Backend se aaya hua specific message show karein (e.g., "Try again in 23h 50m")
+                    alert("⛔ ACCOUNT BLOCKED\n\n" + e.message);
                 } else {
                     Toast.error(e.message || "Failed to cancel order");
                 }
