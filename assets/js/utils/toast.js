@@ -11,39 +11,44 @@ class Toast {
         toast.className = `toast toast-${type}`;
         
         const icons = {
-            success: '<i class="fas fa-check-circle"></i>',
-            error: '<i class="fas fa-exclamation-circle"></i>',
-            warning: '<i class="fas fa-exclamation-triangle"></i>',
-            info: '<i class="fas fa-info-circle"></i>'
+            success: 'fa-check-circle',
+            error: 'fa-exclamation-circle',
+            warning: 'fa-exclamation-triangle',
+            info: 'fa-info-circle'
         };
 
-        toast.innerHTML = `
-            <div class="toast-content">
-                <span class="toast-icon">${icons[type] || icons.info}</span>
-                <span class="toast-msg">${message}</span>
-            </div>
-            <button class="toast-close">&times;</button>
-        `;
+        // UI Structure
+        const content = document.createElement('div');
+        content.className = 'toast-content';
 
-        // Close logic
-        toast.querySelector('.toast-close').onclick = () => toast.remove();
+        const iconWrap = document.createElement('span');
+        iconWrap.className = 'toast-icon';
+        iconWrap.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i>`;
 
+        const msgWrap = document.createElement('span');
+        msgWrap.className = 'toast-msg';
+        msgWrap.innerText = message; // SECURITY FIX: Use innerText instead of innerHTML
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'toast-close';
+        closeBtn.innerHTML = '&times;';
+        closeBtn.onclick = () => toast.remove();
+
+        content.appendChild(iconWrap);
+        content.appendChild(msgWrap);
+        toast.appendChild(content);
+        toast.appendChild(closeBtn);
         container.appendChild(toast);
 
-        // Animation entrance
         setTimeout(() => toast.classList.add('show'), 10);
-
-        // Auto dismiss
         setTimeout(() => {
             toast.classList.remove('show');
             setTimeout(() => toast.remove(), 300);
         }, duration);
     }
-
     static success(msg) { this.show(msg, 'success'); }
     static error(msg) { this.show(msg, 'error'); }
     static warning(msg) { this.show(msg, 'warning'); }
     static info(msg) { this.show(msg, 'info'); }
 }
-
 window.Toast = Toast;
