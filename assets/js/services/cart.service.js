@@ -3,8 +3,7 @@ class CartService {
         return await ApiService.get('/orders/cart/');
     }
 
-    static async addItem(skuCode, quantity = 1) {
-        // [FIX] Retrieve Warehouse ID from storage to ensure backend context
+    static async addItem(skuCode, quantity = 1, forceClear = false) {
         const whId = localStorage.getItem(APP_CONFIG.STORAGE_KEYS.WAREHOUSE_ID);
         
         if (!whId) {
@@ -13,15 +12,31 @@ class CartService {
         }
 
         try {
-            // [FIX] Send 'sku' string and 'warehouse_id' instead of 'sku_id'
+            // [FIX] Added force_clear param
             const res = await ApiService.post('/orders/cart/add/', { 
                 sku: skuCode, 
                 quantity: quantity,
-                warehouse_id: whId
+                warehouse_id: whId,
+                force_clear: forceClear
             });
-            this.updateGlobalCount(); // Sync Navbar
+            this.updateGlobalCount(); 
             return res;
         } catch (e) {
+            // [FIX] Intelligent Error Handling for Warehouse Conflict
+            let errData = {};
+            try { 
+                // ApiService throws Error(JSON.stringify(msg)), so we parse it
+                errData = JSON.parse(e.message); 
+            } catch(parseErr) { 
+                errData = { message: e.message }; 
+            }
+
+            if (errData.code === 'warehouse_conflict') {
+                if (confirm(errData.message)) {
+                    // Recursive retry with force flag
+                    return this.addItem(skuCode, quantity, true); 
+                }
+            }
             throw e;
         }
     }
