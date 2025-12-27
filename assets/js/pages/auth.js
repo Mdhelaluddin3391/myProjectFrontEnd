@@ -5,13 +5,12 @@ const stepOtp = document.getElementById('step-otp');
 let phoneNumber = '';
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Redirect if already logged in
+    // अगर पहले से लॉगिन है तो होमपेज पर भेजें
     if (localStorage.getItem(APP_CONFIG.STORAGE_KEYS.TOKEN)) {
         window.location.href = APP_CONFIG.ROUTES.HOME;
         return;
     }
     
-    // Bind Forms
     const phoneForm = document.getElementById('step-phone');
     if (phoneForm) phoneForm.addEventListener('submit', handleSendOtp);
     
@@ -23,26 +22,26 @@ async function handleSendOtp(e) {
     e.preventDefault();
     const input = document.getElementById('phone-input').value;
     
-    // Validate Indian mobile number
+    // Indian Mobile Validation
     if (!/^[6-9]\d{9}$/.test(input)) {
-        return Toast.error("Invalid Indian mobile number");
+        return Toast.error("Please enter a valid 10-digit mobile number");
     }
 
     const btn = document.getElementById('get-otp-btn');
     const originalHtml = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = '<div class="loader-spinner" style="width:20px;height:20px;border-width:2px;margin:0;"></div>';
+    btn.innerHTML = 'Sending...';
 
     try {
         phoneNumber = `+91${input}`; 
-        // API Call: 1.1 Send Login OTP
+        // API Call: Send OTP
         await ApiService.post('/notifications/send-otp/', { phone: phoneNumber });
         
         stepPhone.style.display = 'none';
         stepOtp.style.display = 'block';
         document.getElementById('display-phone').innerText = phoneNumber;
         
-        Toast.success("OTP Sent");
+        Toast.success("OTP Sent successfully");
         startTimerLocal();
         
         setTimeout(() => {
@@ -64,7 +63,7 @@ async function handleVerifyAndLogin(e) {
     let otp = '';
     document.querySelectorAll('.otp-input').forEach(i => otp += i.value);
     
-    if(otp.length !== 6) return Toast.warning("Please enter complete OTP");
+    if(otp.length !== 6) return Toast.warning("Please enter complete 6-digit OTP");
 
     const btn = document.getElementById('verify-btn');
     const originalText = btn.innerText;
@@ -72,7 +71,7 @@ async function handleVerifyAndLogin(e) {
     btn.innerText = "Verifying...";
     
     try {
-        // API Call: 1.2 Verify OTP & Login (Combined)
+        // Correct API Call: Verify & Register/Login together
         const res = await ApiService.post('/auth/register/customer/', { 
             phone: phoneNumber, 
             otp: otp 
@@ -82,11 +81,11 @@ async function handleVerifyAndLogin(e) {
             localStorage.setItem(APP_CONFIG.STORAGE_KEYS.TOKEN, res.access);
             if(res.refresh) localStorage.setItem(APP_CONFIG.STORAGE_KEYS.REFRESH, res.refresh);
             
-            // Fetch User Profile to store name/email
+            // User Profile Fetch (Optional but good for UI)
             try {
                 const user = await ApiService.get('/auth/me/');
                 localStorage.setItem(APP_CONFIG.STORAGE_KEYS.USER, JSON.stringify(user));
-            } catch(e) { console.warn("Could not fetch profile", e); }
+            } catch(e) { console.warn("Profile fetch failed", e); }
             
             Toast.success("Login Successful");
             window.location.href = APP_CONFIG.ROUTES.HOME;
@@ -97,7 +96,6 @@ async function handleVerifyAndLogin(e) {
     } catch (err) {
         console.error(err);
         Toast.error(err.message || "Verification Failed");
-        localStorage.clear();
         btn.disabled = false;
         btn.innerText = originalText;
     }
@@ -113,7 +111,7 @@ function startTimerLocal() {
     }, 1000);
 }
 
-// Global helpers for HTML oninput events
+// UI Helpers
 window.focusNext = function(el) {
     if (el.value.length === 1 && el.nextElementSibling) el.nextElementSibling.focus();
 }

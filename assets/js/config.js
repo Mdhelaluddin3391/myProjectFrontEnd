@@ -1,7 +1,8 @@
+// assets/js/config.js
 (function() {
     window.APP_CONFIG = {
-        // Updated to match your Django API Prefix
-        API_BASE_URL: "http://127.0.0.1:8000/api/v1", 
+        // Updated: Pointing to your actual Django API
+        API_BASE_URL: "http://127.0.0.1:8000/api/v1",
         
         TIMEOUT: 15000,
 
@@ -16,7 +17,7 @@
 
         STORAGE_KEYS: {
             TOKEN: 'access_token',
-            REFRESH: 'refresh_token',
+            REFRESH: 'refresh_token', // Added for logout support
             USER: 'user_data',
             LOCATION: 'user_location_data'
         }

@@ -13,14 +13,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     startFlashTimer();
 });
 
-// 1. Banners API
+// 1. Banners
 async function loadBanners() {
     const container = document.getElementById('hero-slider');
     try {
         const res = await ApiService.get('/catalog/banners/');
-        const banners = res.results || res; // Handle both pagination and flat list
-        
-        // Filter for HERO position
+        const banners = res.results || res;
         const heroBanners = banners.filter(b => b.position === 'HERO');
         
         if (heroBanners.length > 0) {
@@ -30,9 +28,7 @@ async function loadBanners() {
                      onclick="window.location.href='${b.target_url || '#'}'" 
                      alt="${b.title || 'Banner'}">
             `).join('');
-        } else {
-            container.style.display = 'none';
-        }
+        } else { container.style.display = 'none'; }
     } catch (e) {
         console.warn("Banner load failed", e);
         container.classList.remove('skeleton');
@@ -40,15 +36,13 @@ async function loadBanners() {
     }
 }
 
-// 2. Categories API
+// 2. Categories
 async function loadCategories() {
     const container = document.getElementById('category-grid');
     try {
         const res = await ApiService.get('/catalog/categories/');
         const cats = res.results || res;
-
-        // Display top 8
-        const displayCats = cats.slice(0, 8);
+        const displayCats = cats.slice(0, 8); // Show top 8
 
         container.innerHTML = displayCats.map(c => `
             <div class="cat-card" onclick="window.location.href='/search_results.html?slug=${c.slug}'">
@@ -58,13 +52,10 @@ async function loadCategories() {
                 <div class="cat-name">${c.name}</div>
             </div>
         `).join('');
-    } catch (e) {
-        console.error("Category load failed", e);
-        container.innerHTML = '';
-    }
+    } catch (e) { console.error("Category error", e); }
 }
 
-// 3. Brands API
+// 3. Brands
 async function loadBrands() {
     const container = document.getElementById('brand-scroller');
     try {
@@ -75,24 +66,20 @@ async function loadBrands() {
             document.querySelector('.brands-section').style.display = 'none';
             return;
         }
-
         container.innerHTML = brands.map(b => `
             <div class="brand-circle" onclick="window.location.href='/search_results.html?brand=${b.id}'">
                 <img src="${b.logo_url}" alt="${b.name}">
             </div>
         `).join('');
-    } catch (e) {
-        console.warn("Brands load failed", e);
-    }
+    } catch (e) { console.warn("Brands error", e); }
 }
 
-// 4. Home Feed API (Shelves)
+// 4. Home Feed (Corrected Array Response)
 async function loadFeed() {
     const container = document.getElementById('feed-container');
     try {
         const res = await ApiService.get('/catalog/api/home/feed/');
-        
-        // FIX: API returns an array directly, not { sections: [] }
+        // Fix: Handle array response directly
         const sections = Array.isArray(res) ? res : (res.sections || []);
 
         container.innerHTML = sections.map(sec => `
@@ -106,18 +93,15 @@ async function loadFeed() {
                 </div>
             </section>
         `).join('');
-
     } catch (e) {
         console.error("Feed error", e);
-        container.innerHTML = `<p class="text-center text-muted py-5">Start searching to find products!</p>`;
+        container.innerHTML = `<p class="text-center text-muted py-5">No products found!</p>`;
     }
 }
 
-// Flash Sales (unchanged, assumes standard format)
 async function loadFlashSales() {
     const section = document.getElementById('flash-sale-section');
     const grid = document.getElementById('flash-sale-grid');
-    
     try {
         const res = await ApiService.get('/catalog/flash-sales/');
         const sales = res.results || res;
@@ -126,7 +110,6 @@ async function loadFlashSales() {
             section.style.display = 'none';
             return;
         }
-
         section.style.display = 'block';
         grid.innerHTML = sales.map(item => `
             <div class="flash-card">
@@ -141,15 +124,10 @@ async function loadFlashSales() {
                     <span>${Formatters.currency(item.sale_price || item.discounted_price)}</span>
                     <span class="f-mrp">${Formatters.currency(item.mrp || item.original_price)}</span>
                 </div>
-                <button onclick="addToCart('${item.id}', this)" class="btn btn-sm btn-primary w-100 mt-2" style="padding: 5px;">
-                    ADD
-                </button>
+                <button onclick="addToCart('${item.id}', this)" class="btn btn-sm btn-primary w-100 mt-2">ADD</button>
             </div>
         `).join('');
-
-    } catch (e) {
-        section.style.display = 'none';
-    }
+    } catch (e) { section.style.display = 'none'; }
 }
 
 function createProductCard(p) {
@@ -175,42 +153,31 @@ function startFlashTimer() {
     if(!display) return;
     const end = new Date();
     end.setHours(23, 59, 59, 999); 
-
     setInterval(() => {
-        const now = new Date();
-        const diff = end - now;
+        const diff = end - new Date();
         if(diff <= 0) { display.innerText = "00:00:00"; return; }
         const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
         const m = Math.floor((diff / (1000 * 60)) % 60);
         const s = Math.floor((diff / 1000) % 60);
-        display.innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        display.innerText = `${h}:${m}:${s}`;
     }, 1000);
 }
 
 // Global Add to Cart
 window.addToCart = async function(skuId, btn) {
     if (!localStorage.getItem(APP_CONFIG.STORAGE_KEYS.TOKEN)) {
-        Toast.warning("Login to shop");
+        Toast.warning("Login required");
         setTimeout(() => window.location.href = APP_CONFIG.ROUTES.LOGIN, 1000);
         return;
     }
-
     const originalText = btn.innerText;
     btn.innerText = "..";
     btn.disabled = true;
-
     try {
         await CartService.addItem(skuId, 1);
         Toast.success("Added");
         btn.innerText = "✔";
-        btn.classList.add('btn-primary');
-        btn.classList.remove('btn-outline-primary');
-        setTimeout(() => {
-            btn.disabled = false;
-            btn.innerText = "ADD";
-            btn.classList.remove('btn-primary');
-            btn.classList.add('btn-outline-primary');
-        }, 2000);
+        setTimeout(() => { btn.innerText = "ADD"; btn.disabled = false; }, 1500);
     } catch (e) {
         Toast.error("Failed");
         btn.innerText = originalText;

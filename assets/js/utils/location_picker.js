@@ -11,7 +11,7 @@ const LocationPicker = {
 
     injectModal() {
         if(document.getElementById('location-modal')) return;
-
+        // ... (Modal HTML remains same as your file, skipping for brevity) ...
         const div = document.createElement('div');
         div.id = 'location-modal';
         div.className = 'location-modal';
@@ -21,29 +21,17 @@ const LocationPicker = {
                     <h3 style="margin:0; font-size:1.1rem;">Set Delivery Location</h3>
                     <button id="close-map" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
                 </div>
-                
                 <div class="map-wrapper">
                     <div id="picker-map" style="width:100%; height:100%;"></div>
-                    <div class="center-pin">
-                        <i class="fas fa-map-marker-alt pin-icon"></i>
-                        <div class="pin-shadow"></div>
-                    </div>
-                    <button id="gps-trigger" class="gps-btn" title="Use My Location">
-                        <i class="fas fa-crosshairs"></i>
-                    </button>
+                    <div class="center-pin"><i class="fas fa-map-marker-alt pin-icon"></i></div>
+                    <button id="gps-trigger" class="gps-btn"><i class="fas fa-crosshairs"></i></button>
                 </div>
-
                 <div class="loc-footer">
-                    <h4 id="loc-title" style="margin:0 0 5px; color:var(--text-main);">Detecting...</h4>
-                    <p id="loc-desc" style="font-size:0.85rem; color:var(--text-muted); margin-bottom:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                        Move map to adjust
-                    </p>
-                    <button id="btn-confirm-loc" class="btn btn-primary w-100" disabled>
-                        Confirm Location
-                    </button>
+                    <h4 id="loc-title">Detecting...</h4>
+                    <p id="loc-desc" class="text-muted small mb-3">Move map to adjust</p>
+                    <button id="btn-confirm-loc" class="btn btn-primary w-100" disabled>Confirm Location</button>
                 </div>
-            </div>
-        `;
+            </div>`;
         document.body.appendChild(div);
 
         document.getElementById('close-map').onclick = () => this.close();
@@ -66,19 +54,14 @@ const LocationPicker = {
 
         if(typeof L === 'undefined') {
             const css = document.createElement('link');
-            css.rel = 'stylesheet';
-            css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+            css.rel = 'stylesheet'; href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
             document.head.appendChild(css);
-
             const script = document.createElement('script');
             script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
             script.onload = () => this.initMap();
             document.body.appendChild(script);
         } else {
-            setTimeout(() => {
-                if(!this.map) this.initMap();
-                else this.map.invalidateSize();
-            }, 100);
+            setTimeout(() => { if(!this.map) this.initMap(); else this.map.invalidateSize(); }, 100);
         }
     },
 
@@ -90,17 +73,14 @@ const LocationPicker = {
     initMap() {
         this.map = L.map('picker-map', { zoomControl: false }).setView([this.state.lat, this.state.lng], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
-
         this.map.on('move', () => {
             document.getElementById('btn-confirm-loc').innerText = "Locating...";
             document.getElementById('btn-confirm-loc').disabled = true;
         });
-
         this.map.on('moveend', () => {
             const c = this.map.getCenter();
             this.fetchAddress(c.lat, c.lng);
         });
-
         this.fetchAddress(this.state.lat, this.state.lng);
     },
 
@@ -115,31 +95,21 @@ const LocationPicker = {
     async fetchAddress(lat, lng) {
         this.state.lat = lat;
         this.state.lng = lng;
-
         try {
             const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
             const data = await res.json();
             const addr = data.address;
-            
-            const title = addr.suburb || addr.neighbourhood || addr.city || "Unknown Area";
-            const full = data.display_name;
-            const city = addr.city || addr.town || addr.state_district || "Bengaluru";
-            const pincode = addr.postcode || "";
+            this.state.address = data.display_name;
+            this.state.city = addr.city || addr.town || "Bengaluru";
+            this.state.pincode = addr.postcode || "";
 
-            this.state.address = full;
-            this.state.city = city;
-            this.state.pincode = pincode;
-
-            document.getElementById('loc-title').innerText = title;
-            document.getElementById('loc-desc').innerText = full;
+            document.getElementById('loc-title').innerText = addr.suburb || this.state.city;
+            document.getElementById('loc-desc').innerText = this.state.address;
             
             const btn = document.getElementById('btn-confirm-loc');
             btn.disabled = false;
             btn.innerText = "Confirm Location";
-
-        } catch(e) {
-            document.getElementById('btn-confirm-loc').innerText = "Retry";
-        }
+        } catch(e) { document.getElementById('btn-confirm-loc').innerText = "Retry"; }
     },
 
     async confirm() {
@@ -149,43 +119,38 @@ const LocationPicker = {
         btn.disabled = true;
 
         try {
-            // FIX: Using correct endpoint /locations/check-service/
+            // FIX: Correct Endpoint
             const res = await ApiService.post('/locations/check-service/', {
                 customer_lat: this.state.lat,
                 customer_lon: this.state.lng
             });
 
-            if (res.serviceable === false) {
-                localStorage.setItem('user_lat', this.state.lat);
-                localStorage.setItem('user_lng', this.state.lng);
-                localStorage.setItem('user_address_text', this.state.address);
-                window.location.href = '/not_serviceable.html';
-                return;
-            }
-
-            // Success
+            // Save Attempt
             localStorage.setItem('user_lat', this.state.lat);
             localStorage.setItem('user_lng', this.state.lng);
             localStorage.setItem('user_address_text', this.state.address);
             localStorage.setItem('user_city', this.state.city);
             if(this.state.pincode) localStorage.setItem('user_pincode', this.state.pincode);
+
+            if (res.serviceable === false) {
+                window.location.href = '/not_serviceable.html';
+                return;
+            }
             
             if(res.warehouse_id) {
                 localStorage.setItem('current_warehouse_id', res.warehouse_id);
             }
 
             Toast.success(res.message || "Location Confirmed!");
-
-            if(this.callback) {
-                this.callback(this.state);
-            } else {
-                window.location.reload();
-            }
+            
+            if(this.callback) this.callback(this.state);
+            else window.location.reload();
+            
             this.close();
 
         } catch (e) {
             console.error("Service Check Failed", e);
-            Toast.error(e.message || "Service check failed.");
+            Toast.error("Service check failed.");
             btn.innerText = originalText;
             btn.disabled = false;
         }

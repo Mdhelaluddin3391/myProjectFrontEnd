@@ -9,10 +9,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = APP_CONFIG.ROUTES.LOGIN;
         return;
     }
+    
     await Promise.all([loadAddresses(), loadSummary()]);
     document.getElementById('place-order-btn').addEventListener('click', placeOrder);
     
-    // Auto-resolve warehouse based on current stored location if no address selected yet
+    // Auto-resolve warehouse if location exists
     const lat = localStorage.getItem('user_lat');
     const lng = localStorage.getItem('user_lng');
     if(lat && lng) resolveWarehouse(lat, lng);
@@ -36,7 +37,7 @@ async function loadSummary() {
 
         document.getElementById('summ-subtotal').innerText = Formatters.currency(cart.total_amount);
         document.getElementById('summ-total').innerText = Formatters.currency(cart.total_amount);
-    } catch(e) { console.error(e); }
+    } catch(e) { console.error("Cart error", e); }
 }
 
 async function loadAddresses() {
@@ -48,7 +49,7 @@ async function loadAddresses() {
         const addresses = res.results || res;
 
         if (addresses.length === 0) {
-            container.innerHTML = '<p class="text-muted">No addresses found. Please add one.</p>';
+            container.innerHTML = '<p class="text-muted">No addresses found. Add one.</p>';
             return;
         }
 
@@ -92,9 +93,10 @@ window.selectPayment = function(method, el) {
 async function resolveWarehouse(lat, lng) {
     const placeOrderBtn = document.getElementById('place-order-btn');
     placeOrderBtn.disabled = true;
-    placeOrderBtn.innerText = "Checking Service...";
+    placeOrderBtn.innerText = "Checking Availability...";
 
     try {
+        // Correct endpoint
         const res = await ApiService.post('/locations/check-service/', {
             customer_lat: lat, 
             customer_lon: lng
@@ -107,9 +109,10 @@ async function resolveWarehouse(lat, lng) {
         } else {
             resolvedWarehouseId = null;
             placeOrderBtn.innerText = "Location Not Serviceable";
+            Toast.error("We do not deliver here yet.");
         }
     } catch (e) {
-        placeOrderBtn.innerText = "Service Check Error";
+        placeOrderBtn.innerText = "Service Error";
     }
 }
 
@@ -132,7 +135,7 @@ async function placeOrder() {
         if (paymentMethod === 'COD') {
             window.location.href = `/success.html?order_id=${orderRes.id}`;
         } else if (paymentMethod === 'RAZORPAY') {
-            // 2. Initiate Payment (API 5.1)
+            // 2. Initiate Payment
             await initiateOnlinePayment(orderRes.id, btn);
         }
     } catch (e) {
@@ -144,6 +147,7 @@ async function placeOrder() {
 
 async function initiateOnlinePayment(orderId, btn) {
     try {
+        // 3. Get Payment Config
         const rpOrder = await ApiService.post(`/payments/create/${orderId}/`);
         handleRazorpay(rpOrder, orderId, btn);
     } catch (e) {
@@ -155,7 +159,7 @@ async function initiateOnlinePayment(orderId, btn) {
 
 function handleRazorpay(rpOrder, orderId, btn) {
     if (!window.Razorpay) {
-        Toast.error("Razorpay SDK not loaded");
+        Toast.error("Payment SDK not loaded");
         btn.disabled = false;
         return;
     }
@@ -165,12 +169,12 @@ function handleRazorpay(rpOrder, orderId, btn) {
         "amount": rpOrder.amount, 
         "currency": rpOrder.currency,
         "name": "QuickDash",
-        "description": "Groceries",
+        "description": "Groceries Payment",
         "order_id": rpOrder.id,
         "handler": async function (response) {
             btn.innerText = "Verifying...";
             try {
-                // 3. Verify Payment (API 5.2)
+                // 4. Verify Payment
                 await ApiService.post('/payments/verify/razorpay/', {
                     razorpay_payment_id: response.razorpay_payment_id,
                     razorpay_order_id: response.razorpay_order_id,
@@ -195,6 +199,6 @@ function handleRazorpay(rpOrder, orderId, btn) {
     rzp1.on('payment.failed', function (response){
         Toast.error("Payment Failed: " + response.error.description);
         btn.disabled = false;
-        btn.innerText = "Place Order";
+        btn.innerText = "Pay Now";
     });
 }
