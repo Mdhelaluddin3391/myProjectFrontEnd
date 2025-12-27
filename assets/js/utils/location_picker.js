@@ -1,7 +1,7 @@
 /* assets/js/utils/location_picker.js */
 
 const LocationPicker = {
-    state: { lat: 12.9716, lng: 77.5946, address: '', pincode: '' },
+    state: { lat: 12.9716, lng: 77.5946, address: '', pincode: '', city: 'Bengaluru' },
     map: null,
     callback: null,
 
@@ -56,7 +56,6 @@ const LocationPicker = {
     checkInitialLocation() {
         const saved = localStorage.getItem('user_address_text');
         if(!saved && window.location.pathname === '/index.html') {
-            // Auto open on home if no location
             setTimeout(() => this.open(), 1000);
         }
     },
@@ -67,7 +66,6 @@ const LocationPicker = {
         modal.classList.add('active');
         document.body.classList.add('location-mode-active');
 
-        // Lazy Load Leaflet
         if(typeof L === 'undefined') {
             const css = document.createElement('link');
             css.rel = 'stylesheet';
@@ -92,7 +90,6 @@ const LocationPicker = {
     },
 
     initMap() {
-        // Default Bangalore
         this.map = L.map('picker-map', { zoomControl: false }).setView([this.state.lat, this.state.lng], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
 
@@ -106,7 +103,6 @@ const LocationPicker = {
             this.fetchAddress(c.lat, c.lng);
         });
 
-        // Initial fetch
         this.fetchAddress(this.state.lat, this.state.lng);
     },
 
@@ -127,17 +123,15 @@ const LocationPicker = {
             const data = await res.json();
             const addr = data.address;
             
-            // Format address nicely
             const title = addr.suburb || addr.neighbourhood || addr.city || "Unknown Area";
             const full = data.display_name;
-            const city = addr.city || addr.town || addr.state_district || "";
+            const city = addr.city || addr.town || addr.state_district || "Bengaluru";
             const pincode = addr.postcode || "";
 
             this.state.address = full;
             this.state.city = city;
             this.state.pincode = pincode;
 
-            // Update UI
             document.getElementById('loc-title').innerText = title;
             document.getElementById('loc-desc').innerText = full;
             
@@ -150,47 +144,43 @@ const LocationPicker = {
         }
     },
 
-    // assets/js/utils/location_picker.js के अंदर confirm() फंक्शन को रिप्लेस करें
-
     async confirm() {
-        // 1. बटन को लोडिंग स्टेट में डालें
         const btn = document.getElementById('btn-confirm-loc');
         const originalText = btn.innerText;
         btn.innerText = "Checking Service...";
         btn.disabled = true;
 
-        // 2. डेटा तैयार करें
-        this.state.address = document.getElementById('loc-desc').innerText; // अपडेटेड एड्रेस लें
-        
-        // 3. API को कॉल करें (Serviceability Check)
         try {
-            // नोट: अपने बैकएंड का सही URL यहाँ लिखें (जैसे: /common/check-serviceability/)
-            const res = await ApiService.post('/common/check-serviceability/', {
-                lat: this.state.lat,
-                lng: this.state.lng,
-                pincode: this.state.pincode || '' // पिनकोड भी भेजें अगर उपलब्ध हो
+            // CORRECTED API ENDPOINT AND PAYLOAD
+            const res = await ApiService.post('/warehouse/find-serviceable/', {
+                latitude: this.state.lat,
+                longitude: this.state.lng,
+                city: this.state.city
             });
 
-            // 4. अगर बैकएंड कहे कि सर्विस नहीं है (is_serviceable: false)
-            if (res.serviceable === false) { // या res.is_serviceable, जो आपका बैकएंड भेजे
-                
-                // लोकेशन सेव करें ताकि 'not_serviceable' पेज पर "Change Location" बटन काम करे
+            if (res.serviceable === false) {
+                // Save attempt anyway so "Change Location" on 404 page works
                 localStorage.setItem('user_lat', this.state.lat);
                 localStorage.setItem('user_lng', this.state.lng);
                 localStorage.setItem('user_address_text', this.state.address);
+                localStorage.setItem('user_city', this.state.city);
 
-                // Redirect करें
                 window.location.href = '/not_serviceable.html';
                 return;
             }
 
-            // 5. अगर सर्विस है (Success)
+            // Success: Save Location & Warehouse
             localStorage.setItem('user_lat', this.state.lat);
             localStorage.setItem('user_lng', this.state.lng);
             localStorage.setItem('user_address_text', this.state.address);
+            localStorage.setItem('user_city', this.state.city);
             if(this.state.pincode) localStorage.setItem('user_pincode', this.state.pincode);
+            
+            // Save Warehouse info if returned
+            if(res.warehouse) {
+                localStorage.setItem('current_warehouse_id', res.warehouse.id);
+            }
 
-            // Navbar अपडेट करें
             const navLoc = document.getElementById('header-location');
             if(navLoc) navLoc.innerText = document.getElementById('loc-title').innerText;
 
@@ -199,7 +189,6 @@ const LocationPicker = {
             if(this.callback) {
                 this.callback(this.state);
             } else {
-                // पेज रीलोड करें ताकि प्रोडक्ट्स नए लोकेशन के हिसाब से दिखें
                 window.location.reload();
             }
             this.close();
@@ -213,5 +202,5 @@ const LocationPicker = {
     }
 };
 
-// Initialize
+window.LocationPicker = LocationPicker;
 document.addEventListener('DOMContentLoaded', () => LocationPicker.init());
