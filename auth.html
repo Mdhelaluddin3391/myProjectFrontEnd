@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - QuickDash</title>
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <style>
+        .auth-container { display: flex; align-items: center; justify-content: center; min-height: 80vh; }
+        .auth-card { width: 100%; max-width: 400px; padding: 40px; text-align: center; }
+        .otp-inputs { display: flex; gap: 10px; justify-content: center; margin: 20px 0; }
+        .otp-input { width: 45px; height: 50px; text-align: center; font-size: 1.2rem; border-radius: 8px; border: 1px solid #ddd; }
+        .link-text { color: var(--primary); cursor: pointer; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <main class="auth-container">
+        <div class="card auth-card">
+            <div class="mb-4">
+                <i class="fas fa-bolt fa-3x text-primary"></i>
+                <h2 class="mt-2">Welcome Back</h2>
+                <p class="text-muted">Login with your phone number</p>
+            </div>
+
+            <form id="step-phone">
+                <div class="form-group text-left">
+                    <label class="form-label">Mobile Number</label>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" value="+91" disabled style="width:60px; text-align:center;" class="form-control">
+                        <input type="tel" id="phone-input" class="form-control" placeholder="9876543210" maxlength="10" autofocus>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100" id="get-otp-btn">
+                    Get OTP <i class="fas fa-arrow-right"></i>
+                </button>
+            </form>
+
+            <form id="step-otp" style="display: none;">
+                <p class="mb-2">Enter OTP sent to <strong id="display-phone"></strong> <span class="link-text" onclick="resetForm()">(Edit)</span></p>
+                
+                <div class="otp-inputs">
+                    <input type="text" class="otp-input" maxlength="1" oninput="focusNext(this)">
+                    <input type="text" class="otp-input" maxlength="1" oninput="focusNext(this)">
+                    <input type="text" class="otp-input" maxlength="1" oninput="focusNext(this)">
+                    <input type="text" class="otp-input" maxlength="1" oninput="focusNext(this)">
+                    <input type="text" class="otp-input" maxlength="1" oninput="focusNext(this)">
+                    <input type="text" class="otp-input" maxlength="1" oninput="focusNext(this)">
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100" id="verify-btn">Verify & Login</button>
+                <div class="mt-4 text-muted small">Resend OTP in <span id="timer">30</span>s</div>
+            </form>
+        </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/assets/js/config.js"></script>
+    <script src="/assets/js/utils/toast.js"></script>
+    <script src="/assets/js/services/api.service.js"></script>
+    <script src="/assets/js/layout/main-layout.js"></script>
+    
+    <script src="/assets/js/pages/auth.js"></script> 
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickDash - Groceries in Minutes</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/pages/home.css">
+    <link rel="stylesheet" href="/assets/css/assistant.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+</head>
+
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <main class="container">
+        <div class="hero-wrapper">
+            <div id="hero-slider" class="hero-slider skeleton" style="min-height: 250px;"></div>
+        </div>
+
+        <div class="features-bar">
+            <div class="feature-item"><i class="fas fa-stopwatch"></i> 10 min Delivery</div>
+            <div class="feature-item"><i class="fas fa-medal"></i> Best Quality</div>
+            <div class="feature-item"><i class="fas fa-percentage"></i> Cheap Prices</div>
+            <div class="feature-item"><i class="fas fa-headset"></i> 24/7 Support</div>
+        </div>
+
+        <section class="category-scroll-section">
+            <div class="section-head">
+                <h3>Shop by Category</h3>
+                <a href="/category.html">View All <i class="fas fa-arrow-right"></i></a>
+            </div>
+            <div id="category-grid" class="category-scroll">
+                <div class="skeleton" style="height:90px; width:90px; border-radius:25px;"></div>
+                <div class="skeleton" style="height:90px; width:90px; border-radius:25px;"></div>
+                <div class="skeleton" style="height:90px; width:90px; border-radius:25px;"></div>
+                <div class="skeleton" style="height:90px; width:90px; border-radius:25px;"></div>
+            </div>
+        </section>
+
+        <section id="flash-sale-section" class="flash-sale-container" style="display: none;">
+            <div class="flash-header">
+                <div class="flash-title">
+                    <i class="fas fa-bolt fa-lg"></i>
+                    <h3 class="m-0">Flash Sales</h3>
+                </div>
+                <div id="flash-timer" class="flash-timer">00:00:00</div>
+            </div>
+            <div id="flash-sale-grid" class="flash-grid"></div>
+        </section>
+
+        <section class="mb-5">
+            <div class="section-head">
+                <h3>Popular Brands</h3>
+            </div>
+            <div id="brand-scroller" class="d-flex gap-3"
+                style="overflow-x:auto; padding-bottom:10px; scrollbar-width:none;">
+            </div>
+        </section>
+
+        <div id="feed-container" style="min-height: 300px;">
+            <div class="loader-spinner"></div>
+        </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/assets/js/config.js"></script>
+
+    <script src="/assets/js/utils/formatters.js"></script>
+    <script src="/assets/js/utils/toast.js"></script>
+    <script src="/assets/js/utils/maps_loader.js"></script>
+    <script src="/assets/js/utils/location_picker.js"></script>
+    <script src="/assets/js/utils/initial_service_check.js"></script>
+
+    <script src="/assets/js/services/api.service.js"></script>
+    <script src="/assets/js/services/cart.service.js"></script>
+
+    <script src="/assets/js/layout/main-layout.js"></script>
+
+    <script src="/assets/js/components/assistant.js"></script>
+    <script src="/assets/js/pages/home.js"></script>
+
+
+    <script src="/assets/js/config.js?v=2.0"></script>
+    <script src="/assets/js/layout/main-layout.js?v=2.0"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize Popup
+            ServiceCheck.init();
+        });
+    </script>
+</body>
+
+</html>

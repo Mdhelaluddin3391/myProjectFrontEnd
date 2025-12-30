@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Dashboard - QuickDash</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    <link rel="stylesheet" href="/assets/css/pages/account.css">
+</head>
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <main class="container">
+        <div class="account-layout">
+            <aside class="account-sidebar">
+                <div class="user-profile-brief">
+                    <div class="avatar-circle">U</div>
+                    <div style="flex: 1;">
+                        <h4 id="user-name" style="font-size:1rem; margin-bottom:2px;">User</h4>
+                        <p id="user-phone" class="text-muted small">...</p>
+                    </div>
+                    <button id="edit-profile-btn" class="btn btn-sm btn-outline" style="padding: 5px 10px;" title="Edit Profile">
+                        <i class="fas fa-pen"></i>
+                    </button>
+                </div>
+                
+                <nav>
+                    <a href="/profile.html" class="sidebar-link active"><i class="fas fa-th-large"></i> Dashboard</a>
+                    <a href="/orders.html" class="sidebar-link"><i class="fas fa-box"></i> My Orders</a>
+                    <a href="/addresses.html" class="sidebar-link"><i class="fas fa-map-marker-alt"></i> Addresses</a>
+                    <button onclick="logout()" class="sidebar-link logout w-100 border-0 bg-transparent text-left">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </nav>
+            </aside>
+
+            <div class="account-content">
+                <h2 class="mb-4">Dashboard</h2>
+
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="icon-box bg-green"><i class="fas fa-shopping-bag"></i></div>
+                        <div>
+                            <h3 id="total-orders">0</h3>
+                            <p class="text-muted small">Total Orders</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon-box bg-blue"><i class="fas fa-wallet"></i></div>
+                        <div>
+                            <h3 id="total-spent">₹0</h3>
+                            <p class="text-muted small">Total Spent</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-between align-center mb-3">
+                    <h3>Recent Orders</h3>
+                    <a href="/orders.html" class="text-primary small">View All</a>
+                </div>
+
+                <div id="recent-orders-list">
+                    <div class="loader-spinner"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="profile-modal" class="modal-overlay d-none">
+        <div class="modal-box">
+            <h3 class="mb-3">Edit Profile</h3>
+            <form id="profile-form">
+                <div class="form-group">
+                    <label class="form-label">First Name</label>
+                    <input type="text" id="edit-fname" class="form-control" placeholder="Enter first name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Last Name</label>
+                    <input type="text" id="edit-lname" class="form-control" placeholder="Enter last name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" id="edit-email" class="form-control" placeholder="name@example.com">
+                </div>
+                
+                <div class="d-flex justify-between mt-4">
+                    <button type="button" class="btn btn-outline" onclick="closeProfileModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/assets/js/config.js"></script>
+    <script src="/assets/js/utils/formatters.js"></script>
+    <script src="/assets/js/utils/toast.js"></script>
+    <script src="/assets/js/services/api.service.js"></script>
+    <script src="/assets/js/layout/main-layout.js"></script>
+    <script src="/assets/js/pages/profile.js"></script>
+</body>
+</html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Details - QuickDash</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    <link rel="stylesheet" href="/assets/css/pages/account.css">
+
+    <style>
+        .od-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+
+        .od-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        .item-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .item-row:last-child {
+            border-bottom: none;
+        }
+
+        @media(max-width: 768px) {
+            .od-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <main class="container">
+        <div class="mb-3">
+            <a href="/orders.html" class="text-muted"><i class="fas fa-arrow-left"></i> Back to Orders</a>
+        </div>
+
+        <div id="loader" class="loader-spinner"></div>
+
+        <div id="od-content" class="d-none">
+            <div class="card mb-4">
+                <div class="od-header">
+                    <div>
+                        <h2 id="od-id" class="mb-1">Order #...</h2>
+                        <p id="od-date" class="text-muted small">...</p>
+                    </div>
+                    <div class="text-right">
+                        <span id="od-status" class="status-badge">...</span>
+                        <div class="mt-2">
+                            <a href="#" id="track-btn" class="btn btn-primary btn-sm">
+                                Track Order
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="od-grid">
+                    <div>
+                        <h4 class="mb-3">Items</h4>
+                        <div id="od-items"></div>
+                    </div>
+
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; height: fit-content;">
+                        <h4 class="mb-3">Order Summary</h4>
+                        <div class="d-flex justify-between mb-2 small">
+                            <span>Subtotal</span>
+                            <span id="val-sub">₹0</span>
+                        </div>
+                        <div class="d-flex justify-between mb-2 small">
+                            <span>Delivery</span>
+                            <span id="val-del">₹0</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-between font-weight-bold mb-4">
+                            <span>Total</span>
+                            <span id="val-total">₹0</span>
+                        </div>
+
+                        <div class="mb-4">
+                            <h5 class="mb-2">Delivery Address</h5>
+                            <p id="od-address" class="text-muted small" style="line-height: 1.5;">...</p>
+                        </div>
+
+                        <div class="mb-2">
+                            <h5 class="mb-2">Payment Details</h5>
+                            <p id="od-payment" class="text-muted small">...</p>
+                            <div id="refund-section" class="mt-3 p-2 d-none"
+                                style="background: #fff5f5; border-radius: 8px; border: 1px solid #feb2b2;">
+                                <h6 class="text-danger mb-1"><i class="fas fa-undo"></i> Refund Status</h6>
+                                <p id="refund-status-text" class="small mb-0">Processing your refund...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/assets/js/config.js"></script>
+    <script src="/assets/js/utils/formatters.js"></script>
+    <script src="/assets/js/utils/toast.js"></script>
+    <script src="/assets/js/services/api.service.js"></script>
+    <script src="/assets/js/layout/main-layout.js"></script>
+
+    <script>/* Script section inside order_detail.html */
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const id = new URLSearchParams(window.location.search).get('id');
+            if (!id) return window.location.href = '/orders.html';
+
+            const loader = document.getElementById('loader');
+            const content = document.getElementById('od-content');
+
+            try {
+                const order = await ApiService.get(`/orders/${id}/`);
+
+                // Header
+                document.getElementById('od-id').innerText = `Order #${order.id}`;
+                document.getElementById('od-date').innerText = Formatters.dateTime(order.created_at);
+
+                const statusEl = document.getElementById('od-status');
+                statusEl.innerText = order.status;
+                statusEl.className = `status-badge status-${order.status.toLowerCase()}`;
+
+                // Track Button Logic
+                const trackBtn = document.getElementById('track-btn');
+                if (['confirmed', 'picking', 'packed', 'out_for_delivery'].includes(order.status)) {
+                    trackBtn.href = `/track_order.html?id=${order.id}`;
+                    trackBtn.classList.remove('d-none');
+                } else {
+                    trackBtn.classList.add('d-none');
+                }
+
+                // --- Cancellation UI Implementation ---
+                const actionContainer = document.querySelector('.text-right');
+
+                // Allow cancel only for specific statuses
+                if (['created', 'confirmed'].includes(order.status)) {
+                    const cancelBtn = document.createElement('button');
+                    cancelBtn.className = 'btn btn-outline-danger btn-sm mt-2 ml-2';
+                    cancelBtn.innerHTML = '<i class="fas fa-times"></i> Cancel Order';
+                    cancelBtn.onclick = () => confirmCancellation(order.id);
+
+                    // Warning Text
+                    const warningText = document.createElement('div');
+                    warningText.className = 'text-muted small mt-1';
+                    warningText.style.fontSize = '0.75rem';
+                    warningText.innerHTML = '<i class="fas fa-exclamation-triangle text-warning"></i> Frequent cancellations may lead to account block.';
+
+                    actionContainer.appendChild(cancelBtn);
+                    actionContainer.appendChild(warningText);
+                }
+
+                // Items Rendering
+                document.getElementById('od-items').innerHTML = order.items.map(i => `
+            <div class="item-row">
+                <img src="${i.sku_image || 'https://via.placeholder.com/60'}" width="60" height="60" style="object-fit:contain; border-radius:8px; border:1px solid #eee;">
+                <div style="flex:1;">
+                    <div class="font-weight-600">${i.sku_name}</div>
+                    <div class="text-muted small">Qty: ${i.quantity}</div>
+                </div>
+                <div class="font-weight-bold">${Formatters.currency(i.total_price)}</div>
+            </div>
+        `).join('');
+
+                // Summary Rendering
+                document.getElementById('val-total').innerText = Formatters.currency(order.final_amount);
+                const subtotal = order.items.reduce((acc, i) => acc + parseFloat(i.total_price), 0);
+                document.getElementById('val-sub').innerText = Formatters.currency(subtotal);
+
+                // Address Rendering
+                if (order.delivery_address_json) {
+                    const a = order.delivery_address_json;
+                    document.getElementById('od-address').innerHTML = `
+                <strong>${a.label || 'Address'}</strong><br>
+                ${a.full_address || a.address_line}<br>
+                ${a.city} - ${a.pincode}
+            `;
+                }
+
+                // Payment Info
+                const paymentText = `Method: ${order.payment_method} | Status: ${order.payment_status}`;
+                document.getElementById('od-payment').innerText = paymentText;
+
+                // Refund Section
+                const refundSec = document.getElementById('refund-section');
+                const refundMsg = document.getElementById('refund-status-text');
+
+                if (order.refund_details && order.refund_details.status) {
+                    refundSec.classList.remove('d-none');
+                    if (order.refund_details.status === 'processed') {
+                        refundSec.style.background = '#f0fdf4';
+                        refundSec.style.borderColor = '#bbf7d0';
+                        refundMsg.className = 'text-success small mb-0';
+                        refundMsg.innerHTML = `<strong>Refund Successful:</strong> ${Formatters.currency(order.refund_details.amount)} credited.`;
+                    } else {
+                        refundMsg.innerText = `Refund of ${Formatters.currency(order.refund_details.amount)} is ${order.refund_details.status}.`;
+                    }
+                } else {
+                    refundSec.classList.add('d-none');
+                }
+
+                loader.classList.add('d-none');
+                content.classList.remove('d-none');
+
+            } catch (e) {
+                console.error(e);
+                loader.innerHTML = '<p class="text-danger text-center">Order load failed</p>';
+            }
+        });
+
+        // --- NEW: Hardened Cancellation Function ---
+        async function confirmCancellation(orderId) {
+            const confirmed = confirm(
+                "⚠️ Are you sure you want to cancel?\n\n" +
+                "NOTE: Frequent cancellations will temporarily block your account."
+            );
+
+            if (!confirmed) return;
+
+            try {
+                await ApiService.post(`/orders/${orderId}/cancel/`);
+                Toast.success("Order cancelled successfully");
+                setTimeout(() => window.location.reload(), 1000);
+
+            } catch (e) {
+                // Parse error object string from ApiService
+                let errorMsg = e.message;
+                try {
+                    const parsed = JSON.parse(e.message);
+                    if (parsed.error && parsed.error.message) {
+                        errorMsg = parsed.error.message;
+                    }
+                } catch(parseErr) {
+                    // Fallback if not JSON
+                }
+
+                // Handle Abuse Blocking specifically
+                if (errorMsg.toLowerCase().includes("blocked")) {
+                    alert("⛔ ACCOUNT ACTION\n\n" + errorMsg);
+                } else {
+                    Toast.error(errorMsg || "Failed to cancel order");
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,202 @@
+{
+  "runAt": "2025-12-28T00:30:34.401Z",
+  "results": [
+    {
+      "page": "Home",
+      "url": "http://127.0.0.1:8080/index.html",
+      "console": [
+        {
+          "type": "log",
+          "text": "App Config Loaded Successfully"
+        }
+      ],
+      "pageErrors": [],
+      "requestFailures": [],
+      "globals": {
+        "ApiService": true,
+        "Toast": true,
+        "Formatters": true,
+        "LocationPicker": true,
+        "L": false,
+        "Razorpay": false,
+        "google": false
+      },
+      "screenshot": "./tmp/Home.png"
+    },
+    {
+      "page": "Auth",
+      "url": "http://127.0.0.1:8080/auth.html",
+      "console": [
+        {
+          "type": "log",
+          "text": "App Config Loaded Successfully"
+        },
+        {
+          "type": "log",
+          "text": "App Config Loaded Successfully"
+        }
+      ],
+      "pageErrors": [],
+      "requestFailures": [
+        {
+          "url": "http://127.0.0.1:8080/components/navbar.html",
+          "errorText": "net::ERR_ABORTED"
+        },
+        {
+          "url": "https://fonts.gstatic.com/s/poppins/v24/pxiByp8kv8JHgFVrLCz7Z1xlFQ.woff2",
+          "errorText": "net::ERR_ABORTED"
+        },
+        {
+          "url": "https://fonts.gstatic.com/s/poppins/v24/pxiByp8kv8JHgFVrLEj6Z1xlFQ.woff2",
+          "errorText": "net::ERR_ABORTED"
+        },
+        {
+          "url": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-solid-900.woff2",
+          "errorText": "net::ERR_ABORTED"
+        }
+      ],
+      "globals": {
+        "ApiService": true,
+        "Toast": true,
+        "Formatters": true,
+        "LocationPicker": true,
+        "L": false,
+        "Razorpay": false,
+        "google": false
+      },
+      "screenshot": "./tmp/Auth.png"
+    },
+    {
+      "page": "Checkout",
+      "url": "http://127.0.0.1:8080/checkout.html",
+      "console": [
+        {
+          "type": "warn",
+          "text": "Unrecognized feature: 'web-share'."
+        },
+        {
+          "type": "log",
+          "text": "App Config Loaded Successfully"
+        },
+        {
+          "type": "log",
+          "text": "App Config Loaded Successfully"
+        },
+        {
+          "type": "error",
+          "text": "API Error [GET /catalog/categories/?page_size=15]: JSHandle@error"
+        },
+        {
+          "type": "log",
+          "text": "App Config Loaded Successfully"
+        }
+      ],
+      "pageErrors": [],
+      "requestFailures": [
+        {
+          "url": "https://api.razorpay.com/v1/checkout/public?traffic_env=production&build=0c4fbfa44a237501a8544d3e8872ef6f23671779&build_v1=ad4a7bf67b89ee0057f24e794a8a4696fe205bab&checkout_v2=1&new_session=1&unified_session_id=Rwpmaoxeu8fEeO",
+          "errorText": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:8000/api/v1/catalog/categories/?page_size=15",
+          "errorText": "net::ERR_ABORTED"
+        },
+        {
+          "url": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-brands-400.woff2",
+          "errorText": "net::ERR_ABORTED"
+        },
+        {
+          "url": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-regular-400.woff2",
+          "errorText": "net::ERR_ABORTED"
+        },
+        {
+          "url": "https://fonts.gstatic.com/s/poppins/v24/pxiByp8kv8JHgFVrLGT9Z1xlFQ.woff2",
+          "errorText": "net::ERR_ABORTED"
+        }
+      ],
+      "globals": {
+        "ApiService": true,
+        "Toast": true,
+        "Formatters": true,
+        "LocationPicker": false,
+        "L": false,
+        "Razorpay": false,
+        "google": false
+      },
+      "screenshot": "./tmp/Checkout.png"
+    },
+    {
+      "page": "Track Order",
+      "url": "http://127.0.0.1:8080/track_order.html?id=12345",
+      "console": [
+        {
+          "type": "log",
+          "text": "App Config Loaded Successfully"
+        },
+        {
+          "type": "log",
+          "text": "App Config Loaded Successfully"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        },
+        {
+          "type": "error",
+          "text": "Fetch error JSHandle@error"
+        },
+        {
+          "type": "log",
+          "text": "App Config Loaded Successfully"
+        },
+        {
+          "type": "log",
+          "text": "App Config Loaded Successfully"
+        }
+      ],
+      "pageErrors": [],
+      "requestFailures": [
+        {
+          "url": "http://127.0.0.1:8080/components/navbar.html",
+          "errorText": "net::ERR_ABORTED"
+        },
+        {
+          "url": "https://fonts.gstatic.com/s/poppins/v24/pxiByp8kv8JHgFVrLEj6Z1xlFQ.woff2",
+          "errorText": "net::ERR_ABORTED"
+        }
+      ],
+      "globals": {
+        "ApiService": true,
+        "Toast": true,
+        "Formatters": true,
+        "LocationPicker": true,
+        "L": false,
+        "Razorpay": false,
+        "google": false
+      },
+      "screenshot": "./tmp/Track_Order.png"
+    },
+    {
+      "page": "Not Serviceable",
+      "url": "http://127.0.0.1:8080/not_serviceable.html",
+      "console": [
+        {
+          "type": "log",
+          "text": "App Config Loaded Successfully"
+        }
+      ],
+      "pageErrors": [],
+      "requestFailures": [],
+      "globals": {
+        "ApiService": true,
+        "Toast": true,
+        "Formatters": false,
+        "LocationPicker": true,
+        "L": false,
+        "Razorpay": false,
+        "google": false
+      },
+      "screenshot": "./tmp/Not_Serviceable.png"
+    }
+  ]
+}

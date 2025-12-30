@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Chat - QuickDash</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    <style>
+        body {
+            background: #f0f2f5;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+            background: #fff;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .chat-header {
+            padding: 15px 20px;
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .chat-body {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #e5ddd5;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .msg {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        .msg.sent {
+            align-self: flex-end;
+            background: #dcf8c6;
+        }
+
+        .msg.received {
+            align-self: flex-start;
+            background: #fff;
+        }
+
+        .chat-footer {
+            padding: 15px;
+            background: #fff;
+            border-top: 1px solid #ddd;
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <a href="/support.html" class="text-muted"><i class="fas fa-arrow-left"></i></a>
+            <div>
+                <h4 class="m-0">QuickDash Assistant</h4>
+                <small class="text-success">● Online</small>
+            </div>
+        </div>
+
+        <div class="chat-body" id="chat-box">
+            <div class="msg received">Hello! I am your AI assistant. How can I help you with your orders or groceries
+                today?</div>
+        </div>
+
+        <form class="chat-footer" id="chat-form">
+            <input type="text" id="msg-input" class="form-control" placeholder="Type a message..." required
+                autocomplete="off">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i></button>
+        </form>
+    </div>
+
+    <script src="/assets/js/config.js"></script>
+    <script src="/assets/js/services/api.service.js"></script>
+    <script src="/assets/js/utils/toast.js"></script>
+
+    <script>
+        document.getElementById('chat-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('msg-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            // 1. Show User Message
+            addMsg(text, 'sent');
+            input.value = '';
+
+            // 2. Show Typing Indicator
+            const typingId = 'typing-' + Date.now();
+            addMsg('...', 'received', typingId);
+
+            try {
+                // [AUDIT FIX] Corrected Endpoint: /assistant/chat/ instead of /catalog/assistant/chat/
+                const res = await ApiService.post('/assistant/chat/', { message: text });
+
+                // Remove typing
+                const typingEl = document.getElementById(typingId);
+                if (typingEl) typingEl.remove();
+
+                // 4. Show Bot Response
+                if (res.reply) {
+                    addMsg(res.reply, 'received');
+                } else {
+                    addMsg("I'm not sure how to respond to that.", 'received');
+                }
+
+            } catch (err) {
+                const typingEl = document.getElementById(typingId);
+                if (typingEl) typingEl.remove();
+                addMsg("Network error. Please try again.", 'received');
+            }
+        });
+
+        function addMsg(text, type, id = null) {
+            const div = document.createElement('div');
+            div.className = `msg ${type}`;
+            div.innerText = text;
+            if (id) div.id = id;
+
+            const box = document.getElementById('chat-box');
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+        }
+    </script>
+</body>
+
+</html>

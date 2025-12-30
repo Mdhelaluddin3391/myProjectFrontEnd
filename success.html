@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Placed! - QuickDash</title>
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+</head>
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <main class="container text-center py-5">
+        <div style="margin-top: 50px;">
+            <div style="width: 80px; height: 80px; background: #e6f7ef; color: #32CD32; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; margin: 0 auto 20px;">
+                ✓
+            </div>
+            <h1 class="mb-2">Order Placed Successfully!</h1>
+            
+            <h4 id="display-order-id" class="text-primary mb-3"></h4>
+            
+            <p class="text-muted mb-4">Thank you for your purchase. Your order has been received.</p>
+            
+            <div class="d-flex justify-center gap-3" style="justify-content: center; gap: 15px;">
+                <a href="/orders.html" class="btn btn-primary">View My Orders</a>
+                <a href="/index.html" class="btn btn-outline">Continue Shopping</a>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+    <script src="/assets/js/config.js"></script>
+    <script src="/assets/js/services/api.service.js"></script>
+    <script src="/assets/js/utils/toast.js"></script>
+    <script src="/assets/js/layout/main-layout.js"></script>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+             // Logic to extract Order ID from URL (?order_id=123)
+             const params = new URLSearchParams(window.location.search);
+             const orderId = params.get('order_id');
+             
+             if(orderId) {
+                 // Display simplified Order ID (e.g., first 8 chars)
+                 const displayId = orderId.length > 8 ? orderId.substring(0, 8).toUpperCase() : orderId;
+                 document.getElementById('display-order-id').innerText = `Order #${displayId}`;
+             }
+        });
+    </script>
+</body>
+</html>

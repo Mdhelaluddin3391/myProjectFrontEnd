@@ -1,0 +1,143 @@
+/* --- Modern Navbar --- */
+.new-header {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 10px 0;
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.header-wrapper {
+    max-width: var(--container-width);
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.header-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    gap: 20px;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--primary);
+    display: flex; align-items: center; gap: 8px;
+    text-shadow: 0 2px 10px rgba(50,205,50,0.2);
+}
+
+.location {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.9rem; font-weight: 500;
+    padding: 8px 16px;
+    background: var(--bg-body);
+    color: var(--text-main);
+    border-radius: 50px;
+    max-width: 200px;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.location:hover { border-color: var(--primary); background: var(--primary-light); }
+
+/* Added visual cue for active Delivery Address context */
+.location.active-delivery {
+    background: #ecfdf5; /* Very light green */
+    border-color: var(--primary);
+    color: var(--primary-dark);
+}
+
+.location-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+
+.header-icons { display: flex; gap: 20px; align-items: center; }
+.icon-link {
+    position: relative; display: flex; flex-direction: column; align-items: center;
+    color: var(--text-main); font-size: 0.75rem; font-weight: 500;
+}
+.icon-link i { font-size: 1.4rem; margin-bottom: 2px; color: var(--text-muted); transition: 0.2s; }
+.icon-link:hover i { color: var(--primary); }
+
+.cart-count {
+    position: absolute; top: -5px; right: -5px;
+    background: var(--danger); color: #fff;
+    width: 18px; height: 18px; border-radius: 50%;
+    font-size: 10px; font-weight: bold;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid #fff;
+}
+
+/* Search Bar */
+.search-bar-row { position: relative; width: 100%; max-width: 600px; margin: 0 auto; }
+.search-bar-row input {
+    width: 100%; padding: 12px 20px 12px 45px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-body);
+    border-radius: 12px;
+    font-size: 0.95rem; outline: none; transition: 0.3s;
+}
+.search-bar-row input:focus {
+    background: #fff; border-color: var(--primary);
+    box-shadow: 0 0 0 4px var(--primary-light);
+}
+.search-bar-row i {
+    position: absolute; left: 15px; top: 50%;
+    transform: translateY(-50%); color: var(--text-muted);
+}
+
+/* Horizontal Nav */
+.header-nav-row {
+    display: flex; gap: 10px; overflow-x: auto;
+    padding: 10px 0 5px; scrollbar-width: none;
+    border-top: 1px solid var(--border-color);
+    margin-top: 10px;
+}
+.nav-item {
+    padding: 6px 16px; background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 20px; font-size: 0.85rem; font-weight: 500;
+    color: var(--text-muted); white-space: nowrap; transition: 0.2s;
+}
+.nav-item:hover, .nav-item.active {
+    background: var(--primary); color: #fff; border-color: var(--primary);
+    box-shadow: 0 4px 10px rgba(50,205,50,0.2);
+}
+
+/* --- Common Layouts (Sidebar for Account/Track) --- */
+.layout-grid {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 30px;
+    min-height: 60vh;
+}
+.sidebar-card {
+    background: #fff; border-radius: var(--radius);
+    padding: 20px; border: 1px solid var(--border-color);
+    height: fit-content; position: sticky; top: 100px;
+}
+
+@media(max-width: 768px) {
+    .header-top-row { flex-wrap: wrap; gap: 10px; }
+    .logo-location-group { width: 100%; justify-content: space-between; }
+    .search-bar-row { order: 3; margin-top: 10px; }
+    .layout-grid { grid-template-columns: 1fr; }
+    .sidebar-card { position: static; margin-bottom: 20px; }
+}
+
+/* --- Footer --- */
+footer {
+    background: #fff; padding: 50px 0 20px;
+    border-top: 1px solid var(--border-color); margin-top: auto;
+}
+.footer-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 30px; padding-bottom: 30px;
+}
+.footer-col h4 { margin-bottom: 15px; color: var(--primary); }
+.footer-col a { display: block; color: var(--text-muted); margin-bottom: 8px; font-size: 0.9rem; }
+.footer-col a:hover { color: var(--primary); transform: translateX(5px); display: inline-block; }
+.copyright { text-align: center; padding-top: 20px; border-top: 1px solid var(--border-color); font-size: 0.85rem; color: #999; }

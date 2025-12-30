@@ -1,0 +1,42 @@
+<nav class="new-header">
+    <div class="header-wrapper">
+        <div class="header-top-row">
+            <div class="logo-location-group d-flex align-center w-100" style="gap:20px">
+                <a href="/index.html" class="logo">
+                    <i class="fas fa-bolt"></i><span>QuickDash</span>
+                </a>
+                
+                <div class="location" id="navbar-location-box">
+                    <i class="fas fa-map-marker-alt text-danger"></i>
+                    <span id="header-location" class="location-text">Select Location</span>
+                    <i class="fas fa-chevron-down small text-muted"></i>
+                </div>
+            </div>
+            
+            <form class="search-bar-row" method="GET" action="/search_results.html">
+                <i class="fas fa-search"></i>
+                <input type="text" name="search" placeholder="Search for milk, vegetables, snacks..." autocomplete="off">
+            </form>
+
+            <div class="header-icons">
+                <a href="/profile.html" class="icon-link">
+                    <i class="far fa-user"></i>
+                    <span>Profile</span>
+                </a>
+                <a href="/cart.html" class="icon-link">
+                    <div style="position:relative;">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span id="cart-badge" class="cart-count" style="display:none">0</span>
+                    </div>
+                    <span>Cart</span>
+                </a>
+            </div>
+        </div>
+        
+        <div class="header-nav-row" id="dynamic-navbar">
+            <a href="/index.html" class="nav-item active"><i class="fas fa-fire"></i> Trending</a>
+            <a href="/search_results.html?slug=fruits-vegetables" class="nav-item">Fruits & Veggies</a>
+            <a href="/search_results.html?slug=dairy-bread" class="nav-item">Dairy & Breakfast</a>
+            </div>
+    </div>
+</nav>

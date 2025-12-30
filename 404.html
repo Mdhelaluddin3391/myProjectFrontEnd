@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Not Found - QuickDash</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    <style>
+        .err-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: #f8f9fa;
+        }
+        .err-code { font-size: 6rem; font-weight: 800; color: var(--primary); line-height: 1; }
+        .err-msg { font-size: 1.5rem; margin-bottom: 20px; color: var(--secondary); }
+    </style>
+</head>
+<body>
+    <div class="err-container">
+        <div class="err-code">404</div>
+        <div class="err-msg">Oops! Page not found.</div>
+        <p class="text-muted mb-4">The page you are looking for might have been removed or is temporarily unavailable.</p>
+        
+        <a href="/index.html" class="btn btn-primary">
+            Go to Homepage
+        </a>
+    </div>
+    <script src="/assets/js/config.js"></script>
+    <script src="/assets/js/services/api.service.js"></script>
+    <script src="/assets/js/layout/main-layout.js"></script>
+</body>
+</html>

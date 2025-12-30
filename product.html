@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details - QuickDash</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    <link rel="stylesheet" href="/assets/css/pages/catalog.css">
+</head>
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <main class="container">
+        <div id="loader" class="loader-spinner"></div>
+        
+        <div id="product-content" class="product-detail-container d-none">
+            <div class="gallery-section">
+                <img id="p-image" src="" class="main-image">
+            </div>
+
+            <div class="info-section">
+                <div id="p-brand" class="brand-badge">Brand</div>
+                <h1 id="p-name">Product Name</h1>
+                <p id="p-unit" class="text-muted" style="font-size:1.1rem;">Unit</p>
+
+                <div class="price-box">
+                    <span id="p-price" class="current-price">₹0</span>
+                    <span id="p-mrp" class="mrp"></span>
+                    <span id="p-discount" class="discount-tag"></span>
+                </div>
+
+                <div class="action-row">
+                    <div class="qty-selector">
+                        <button class="qty-btn" onclick="updateQty(-1)">-</button>
+                        <div id="qty-val" class="qty-val">1</div>
+                        <button class="qty-btn" onclick="updateQty(1)">+</button>
+                    </div>
+                    <button id="add-btn" class="btn btn-primary" style="padding: 12px 40px; font-size:1.1rem;">
+                        Add to Cart <i class="fas fa-shopping-cart"></i>
+                    </button>
+                </div>
+
+                <hr style="margin: 30px 0; border:0; border-top:1px solid #eee;">
+
+                <div>
+                    <h3 class="mb-2">Description</h3>
+                    <p id="p-desc" class="text-muted">No description available.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/assets/js/config.js"></script>
+    <script src="/assets/js/utils/formatters.js"></script>
+    <script src="/assets/js/utils/toast.js"></script>
+    <script src="/assets/js/services/api.service.js"></script>
+    <script src="/assets/js/services/cart.service.js"></script>
+    <script src="/assets/js/layout/main-layout.js"></script>
+    <script src="/assets/js/pages/product.js"></script>
+</body>
+</html>

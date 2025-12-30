@@ -1,0 +1,104 @@
+.ast-btn {
+    position: fixed;
+    bottom: 30px; right: 30px;
+    width: 60px; height: 60px;
+    background: linear-gradient(135deg, var(--primary), #2ecc71);
+    border-radius: 50%;
+    box-shadow: 0 10px 25px rgba(46, 204, 113, 0.4);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; z-index: 9990;
+    transition: transform 0.3s;
+    animation: float 3s ease-in-out infinite;
+}
+.ast-btn:hover { transform: scale(1.1); }
+.ast-btn img { width: 35px; height: 35px; object-fit: contain; }
+
+.ast-box {
+    position: fixed;
+    bottom: 100px; right: 30px;
+    width: 350px; height: 500px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    display: flex; flex-direction: column;
+    z-index: 9991;
+    overflow: hidden;
+    transform: translateY(20px);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s;
+}
+.ast-box.active {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: all;
+}
+
+.ast-header {
+    background: var(--primary);
+    color: #fff;
+    padding: 15px 20px;
+    display: flex; justify-content: space-between; align-items: center;
+}
+
+.ast-body {
+    flex: 1;
+    background: #f0fdf4;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex; flex-direction: column; gap: 10px;
+}
+
+.msg-row { display: flex; width: 100%; }
+.msg-row.user { justify-content: flex-end; }
+.msg-row.bot { justify-content: flex-start; }
+
+.msg-bubble {
+    max-width: 80%;
+    padding: 10px 15px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+.msg-bubble.bot {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-bottom-left-radius: 4px;
+    color: var(--text-main);
+}
+.msg-bubble.user {
+    background: var(--primary);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+}
+
+.ast-footer {
+    padding: 10px;
+    background: #fff;
+    border-top: 1px solid #eee;
+    display: flex; gap: 10px;
+}
+.ast-footer input {
+    flex: 1;
+    border: 1px solid #eee;
+    border-radius: 20px;
+    padding: 10px 15px;
+    outline: none;
+}
+.ast-footer button {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@media(max-width: 480px) {
+    .ast-box { width: 90%; right: 5%; bottom: 20px; height: 60vh; }
+}

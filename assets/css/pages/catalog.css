@@ -1,0 +1,112 @@
+/* Sidebar Filter Styling (Uses shared sidebar-card class from layout.css) */
+.filter-group { margin-bottom: 25px; }
+.filter-title { font-weight: 700; margin-bottom: 12px; font-size: 0.95rem; display: flex; justify-content: space-between; }
+.filter-item {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 8px; cursor: pointer; color: var(--text-muted); transition: 0.2s;
+}
+.filter-item:hover { color: var(--primary); }
+
+/* Grid View */
+.product-grid-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 25px;
+}
+
+/* Product Detail Page Specifics */
+.product-detail-layout {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 50px;
+    background: #fff; padding: 40px; border-radius: 20px;
+    box-shadow: var(--shadow-sm); border: 1px solid var(--border-color);
+}
+
+.gallery-section {
+    display: flex; align-items: center; justify-content: center;
+    background: #f9f9f9; border-radius: 16px; padding: 30px;
+    height: 450px;
+}
+.gallery-section img { max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+
+.info-section { display: flex; flex-direction: column; justify-content: center; }
+.brand-badge {
+    background: var(--primary-light); color: var(--primary-dark);
+    padding: 6px 12px; border-radius: 6px; font-weight: 700;
+    font-size: 0.8rem; width: fit-content; margin-bottom: 15px;
+}
+.p-title { font-size: 2.2rem; font-weight: 700; line-height: 1.2; margin-bottom: 10px; color: var(--text-main); }
+.p-unit { font-size: 1.1rem; color: var(--text-muted); margin-bottom: 25px; }
+
+.price-box { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; }
+.current-price { font-size: 2.5rem; font-weight: 700; color: var(--text-main); }
+.mrp-tag { text-decoration: line-through; color: #9ca3af; font-size: 1.2rem; }
+.discount-tag { background: #fee2e2; color: #dc2626; padding: 4px 10px; border-radius: 6px; font-weight: 700; }
+
+.action-row { display: flex; gap: 20px; align-items: center; }
+.qty-wrapper {
+    display: flex; align-items: center; background: #f3f4f6;
+    border-radius: 10px; padding: 5px;
+}
+.qty-btn { width: 40px; height: 40px; background: #fff; border-radius: 8px; font-weight: 700; font-size: 1.2rem; box-shadow: var(--shadow-sm); }
+.qty-val { width: 40px; text-align: center; font-weight: 600; }
+
+@media(max-width: 768px) {
+    .product-detail-layout { grid-template-columns: 1fr; padding: 20px; }
+    .gallery-section { height: 300px; }
+    .p-title { font-size: 1.5rem; }
+    .product-grid-view { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+}
+
+
+
+/* --- Catalog Layout (Sidebar + Content) --- */
+.catalog-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr; /* Sidebar width fixed, Content flexible */
+    gap: 30px;
+    align-items: start; /* Sidebar ko top par chipka kar rakhega */
+    position: relative;
+}
+
+/* Sidebar Styling Fix */
+.filters-sidebar {
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 90px; /* Navbar ke neeche sticky rahega */
+    height: fit-content;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto; /* Agar filter lambe hon toh scroll aa jaye */
+}
+
+/* Mobile Responsive */
+@media(max-width: 768px) {
+    .catalog-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .filters-sidebar {
+        display: none; /* Mobile mein sidebar chupa dein ya accordion banayein */
+        /* Note: Mobile ke liye alag filter button logic lagana padega baad mein */
+    }
+}
+
+
+
+/* Brand list ka scrollbar styling */
+#brand-filter-container::-webkit-scrollbar {
+    width: 4px;
+}
+#brand-filter-container::-webkit-scrollbar-track {
+    background: #f1f1f1; 
+}
+#brand-filter-container::-webkit-scrollbar-thumb {
+    background: #ccc; 
+    border-radius: 4px;
+}
+#brand-filter-container::-webkit-scrollbar-thumb:hover {
+    background: var(--primary); 
+}

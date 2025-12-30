@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - QuickDash</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    <link rel="stylesheet" href="/assets/css/pages/checkout.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <main class="container">
+        <div class="mb-3">
+            <a href="/cart.html" class="text-muted"><i class="fas fa-arrow-left"></i> Back to Cart</a>
+        </div>
+        
+        <h1 class="mb-4">Checkout</h1>
+
+        <div class="checkout-layout">
+            <div class="checkout-steps">
+                
+                <div class="card step-card mb-4">
+                    <div class="step-header">
+                        <span class="step-number">1</span>
+                        <h3>Delivery Address</h3>
+                    </div>
+                    
+                    <div id="address-list" class="address-grid mt-3">
+                        <div class="loader-spinner"></div>
+                    </div>
+
+                    <button class="btn btn-outline btn-sm mt-3" onclick="openAddressModal()">
+                        <i class="fas fa-plus"></i> Add New Address
+                    </button>
+                </div>
+
+                <div class="card step-card">
+                    <div class="step-header">
+                        <span class="step-number">2</span>
+                        <h3>Payment Method</h3>
+                    </div>
+
+                    <div class="payment-options mt-3">
+                        <label class="payment-option selected" onclick="selectPayment('COD', this)">
+                            <input type="radio" name="payment" value="COD" checked>
+                            <div class="pay-icon"><i class="fas fa-money-bill-wave"></i></div>
+                            <div>
+                                <strong>Cash on Delivery</strong>
+                                <p class="text-muted small">Pay cash upon receiving your order</p>
+                            </div>
+                        </label>
+
+                        <label class="payment-option" onclick="selectPayment('RAZORPAY', this)">
+                            <input type="radio" name="payment" value="RAZORPAY">
+                            <div class="pay-icon"><i class="fas fa-credit-card"></i></div>
+                            <div>
+                                <strong>Pay Online</strong>
+                                <p class="text-muted small">UPI, Cards, Netbanking (Razorpay)</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="checkout-sidebar">
+                <div class="card summary-card sticky-top">
+                    <h3>Order Summary</h3>
+                    <div id="mini-cart-list" class="mini-cart mb-3"></div>
+                    
+                    <hr>
+                    
+                    <div class="summary-row">
+                        <span>Subtotal</span>
+                        <span id="summ-subtotal">...</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Delivery</span>
+                        <span class="text-success">FREE</span>
+                    </div>
+                    <div class="summary-row total-row mt-2 pt-2 border-top">
+                        <span>To Pay</span>
+                        <span id="summ-total">...</span>
+                    </div>
+
+                    <button id="place-order-btn" class="btn btn-primary w-100 mt-4">
+                        Place Order
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="address-modal" class="modal-overlay d-none">
+        <div class="modal-box">
+            <h3 class="mb-3">Add Address</h3>
+            <form id="address-form">
+                <input type="hidden" id="addr-lat" value="12.9716">
+                <input type="hidden" id="addr-lng" value="77.5946">
+
+                <div class="form-group">
+                    <label class="form-label">Full Address</label>
+                    <input type="text" id="addr-text" class="form-control" placeholder="House No, Street, Area" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">City</label>
+                    <input type="text" id="addr-city" class="form-control" placeholder="City" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Pincode</label>
+                    <input type="text" id="addr-pin" class="form-control" placeholder="6-digit Pincode" maxlength="6" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Type</label>
+                    <select id="addr-type" class="form-control">
+                        <option value="HOME">Home</option>
+                        <option value="WORK">Work</option>
+                        <option value="OTHER">Other</option>
+                    </select>
+                </div>
+                
+                <div class="d-flex justify-between mt-4">
+                    <button type="button" class="btn btn-outline" onclick="closeAddressModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Address</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="/assets/js/config.js"></script>
+    <script src="/assets/js/utils/formatters.js"></script>
+    <script src="/assets/js/utils/toast.js"></script>
+    <script src="/assets/js/services/api.service.js"></script>
+    <script src="/assets/js/layout/main-layout.js"></script>
+    <script src="/assets/js/pages/checkout.js"></script>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Order - QuickDash</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    <link rel="stylesheet" href="/assets/css/track_order_style.css">
+</head>
+
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <main style="display: flex; flex-direction: column; height: calc(100vh - 70px);">
+        <div class="track-layout">
+            <div class="track-sidebar">
+                <div class="d-flex align-center gap-2 mb-4">
+                    <a href="/orders.html" class="text-muted"><i class="fas fa-arrow-left"></i></a>
+                    <h2 class="m-0" id="t-id">Tracking...</h2>
+                </div>
+
+                <div class="timeline-wrapper">
+                    <div class="timeline-step" id="step-confirmed">
+                        <div class="dot"></div>
+                        <div class="content">
+                            <h4>Order Confirmed</h4>
+                        </div>
+                    </div>
+                    <div class="timeline-step" id="step-packed">
+                        <div class="dot"></div>
+                        <div class="content">
+                            <h4>Packed</h4>
+                        </div>
+                    </div>
+                    <div class="timeline-step" id="step-dispatched">
+                        <div class="dot"></div>
+                        <div class="content">
+                            <h4>Out for Delivery</h4>
+                            <div id="rider-info" class="rider-box d-none">
+                                <div class="rider-avatar"><i class="fas fa-biking"></i></div>
+                                <div>
+                                    <div class="font-weight-bold" id="r-name">Delivery Partner</div>
+                                    <a id="r-phone" href="#" class="small">Call Rider</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="timeline-step" id="step-delivered">
+                        <div class="dot"></div>
+                        <div class="content">
+                            <h4>Delivered</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="track-map-container">
+                <div id="map"
+                    style="width: 100%; height: 100%; background: #f0f2f5; display:flex; align-items:center; justify-content:center; color:#666;">
+                    <div id="map-placeholder">
+                        <i class="fas fa-map-marked-alt fa-3x mb-3"></i>
+                        <p>Loading Map...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/assets/js/config.js"></script>
+    <script src="/assets/js/utils/toast.js"></script>
+    <script src="/assets/js/utils/formatters.js"></script>
+    <script src="/assets/js/services/api.service.js"></script>
+    <script src="/assets/js/layout/main-layout.js"></script>
+
+    <script>
+        async function loadMapsScript() {
+            if (window.AppConfigService && !window.AppConfigService.isLoaded) {
+                try { await window.AppConfigService.load(); } catch (e) { }
+            }
+
+            const key = window.APP_CONFIG.GOOGLE_MAPS_KEY;
+            const placeholder = document.getElementById('map-placeholder');
+
+            // Fallback for missing/dummy keys
+            if (!key || key.includes('REPLACE') || key.length < 10) {
+                placeholder.innerHTML = `
+                    <div class="text-center p-4">
+                        <i class="fas fa-map-marked-alt fa-3x mb-3 text-muted"></i>
+                        <h4>Map Unavailable</h4>
+                        <p class="small text-muted">Live tracking is active, but the map view is disabled.</p>
+                    </div>`;
+                return;
+            }
+
+            if (document.getElementById('gmaps-script')) return;
+
+            const script = document.createElement('script');
+            script.id = 'gmaps-script';
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&callback=initMap`;
+            script.async = true;
+            script.defer = true;
+            script.onerror = () => {
+                placeholder.innerHTML = '<p>Map loading failed (Network Error)</p>';
+            };
+            document.body.appendChild(script);
+        }
+
+        let map, marker, riderMarker, orderId, socket;
+        let reconnectInterval = 1000;
+        
+
+        window.initMap = function () {
+            try {
+                const mapEl = document.getElementById('map');
+                if (!mapEl) return;
+
+                map = new google.maps.Map(mapEl, {
+                    center: { lat: 12.9716, lng: 77.5946 },
+                    zoom: 13,
+                    disableDefaultUI: true
+                });
+                marker = new google.maps.Marker({ map: map, title: "Destination" });
+                riderMarker = new google.maps.Marker({
+                    map: map,
+                    icon: 'https://cdn-icons-png.flaticon.com/32/3063/3063823.png',
+                    title: "Rider"
+                });
+            } catch (e) {
+                console.error("Map Init Error:", e);
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            orderId = new URLSearchParams(window.location.search).get('id');
+            if (!orderId) return window.location.href = '/orders.html';
+
+            document.getElementById('t-id').innerText = `Order #${orderId}`;
+
+            await loadMapsScript();
+
+            fetchOrderDetails();
+            connectTrackingSocket();
+        });
+
+        async function fetchOrderDetails() {
+            try {
+                const order = await ApiService.get(`/orders/${orderId}/`);
+                updateTimeline(order.status);
+
+                if (order.delivery_address_json && typeof map !== 'undefined') {
+                    const pos = {
+                        lat: parseFloat(order.delivery_address_json.lat),
+                        lng: parseFloat(order.delivery_address_json.lng)
+                    };
+                    marker.setPosition(pos);
+                    map.panTo(pos);
+                }
+
+                if (order.delivery && order.delivery.rider && order.delivery.rider.user) {
+                    document.getElementById('rider-info').classList.remove('d-none');
+                    document.getElementById('r-name').innerText = order.delivery.rider.user.first_name || 'Rider';
+                    document.getElementById('r-phone').href = `tel:${order.delivery.rider.user.phone}`;
+                }
+            } catch (e) { console.error("Fetch error", e); }
+        }
+
+        function updateTimeline(status) {
+            document.querySelectorAll('.timeline-step').forEach(el => el.classList.remove('active'));
+            const map = {
+                'created': [],
+                'confirmed': ['step-confirmed'],
+                'picking': ['step-confirmed'],
+                'packed': ['step-confirmed', 'step-packed'],
+                'out_for_delivery': ['step-confirmed', 'step-packed', 'step-dispatched'],
+                'delivered': ['step-confirmed', 'step-packed', 'step-dispatched', 'step-delivered']
+            };
+            (map[status.toLowerCase()] || []).forEach(id => document.getElementById(id).classList.add('active'));
+        }
+
+        /* Inside track_order.html script tag */
+
+        
+
+        async function connectTrackingSocket(retryCount = 0) {
+            try {
+                // 1. Get One-time Auth Ticket
+                const res = await ApiService.post('/auth/ws/ticket/');
+                if (!res.ticket) throw new Error("No ticket received");
+
+                const ticket = res.ticket;
+                const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+                // Handle custom ports or paths if configured
+                const host = window.APP_CONFIG.API_BASE_URL
+                    .replace('http://', '')
+                    .replace('https://', '')
+                    .split('/')[0];
+
+                socket = new WebSocket(`${protocol}://${host}/ws/orders/${orderId}/?ticket=${ticket}`);
+
+                socket.onopen = () => {
+                    console.log("✅ Connected to Live Tracking");
+                    reconnectInterval = 1000;
+                    retryCount = 0; // Reset retries
+                };
+
+                socket.onmessage = (e) => {
+                    const data = JSON.parse(e.data);
+
+                    if (data.type === 'rider_location') {
+                        const pos = { lat: data.lat, lng: data.lng };
+                        // Update Rider Marker
+                        if (typeof riderMarker !== 'undefined') {
+                            riderMarker.setPosition(pos);
+                        } else if (typeof map !== 'undefined' && typeof google !== 'undefined') {
+                            // Initialize if missing
+                            riderMarker = new google.maps.Marker({
+                                map: map,
+                                position: pos,
+                                icon: 'https://cdn-icons-png.flaticon.com/32/3063/3063823.png',
+                                title: "Rider"
+                            });
+                        }
+
+                    } else if (data.type === 'status_update') {
+                        // Refresh full order details on status change
+                        fetchOrderDetails();
+                        Toast.info(data.message);
+                        if (data.status === 'delivered') socket.close();
+                    }
+                };
+
+                socket.onclose = async (e) => {
+                    console.log("Socket Closed", e.code);
+
+                    // [FIX] Handle Auth Token Expiry (Code 4003 from Backend Consumers)
+                    if (e.code === 4003) {
+                        console.warn("Socket Auth Failed. Attempting Token Refresh...");
+
+                        if (retryCount < 3) {
+                            // Attempt to refresh JWT and get new ticket
+                            const refreshed = await ApiService.refreshToken();
+                            if (refreshed) {
+                                setTimeout(() => connectTrackingSocket(retryCount + 1), 1000);
+                                return;
+                            }
+                        }
+                        Toast.error("Tracking connection failed. Please refresh page.");
+                        return;
+                    }
+
+                    // Standard Reconnect (Network blip)
+                    if (retryCount < 10) {
+                        console.log(`Reconnecting in ${reconnectInterval}ms...`);
+                        setTimeout(() => connectTrackingSocket(retryCount), reconnectInterval);
+                        reconnectInterval = Math.min(reconnectInterval * 2, 30000);
+                    }
+                };
+
+            } catch (e) {
+                console.error("Socket Setup Failed", e);
+                if (retryCount < 5) setTimeout(() => connectTrackingSocket(retryCount + 1), 5000);
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Not Available - QuickDash</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    <style>
+        .error-wrapper {
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+        .error-img { width: 200px; margin-bottom: 30px; opacity: 0.8; }
+        .location-box {
+            background: #fff3cd;
+            color: #856404;
+            padding: 10px 20px;
+            border-radius: 30px;
+            display: inline-block;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            border: 1px solid #ffeeba;
+        }
+    </style>
+</head>
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <main class="container">
+        <div class="error-wrapper">
+            <img src="https://cdn-icons-png.flaticon.com/512/10632/10632613.png" class="error-img" alt="No Service">
+            
+            <div id="loc-display" class="location-box">
+                <i class="fas fa-map-marker-alt"></i> Checking location...
+            </div>
+
+            <h1 class="mb-3">We're not there yet! 😔</h1>
+            <p class="text-muted mb-4" style="max-width: 500px;">
+                Sorry, we currently do not deliver to your selected location. 
+                We are expanding fast and hope to serve you soon.
+            </p>
+
+            <div class="d-flex gap-3">
+                <button onclick="changeLocation()" class="btn btn-primary">
+                    Change Location
+                </button>
+                <a href="/index.html" class="btn btn-outline">Go Home</a>
+            </div>
+        </div>
+    </main>
+    
+    <script src="/assets/js/config.js"></script>
+    <script src="/assets/js/services/api.service.js"></script>
+    <script src="/assets/js/utils/toast.js"></script>
+    <script src="/assets/js/utils/location_picker.js"></script>
+    <script src="/assets/js/layout/main-layout.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const loc = localStorage.getItem('user_address_text');
+            const display = document.getElementById('loc-display');
+            if(loc) display.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${loc}`;
+            else display.style.display = 'none';
+        });
+
+        function changeLocation() {
+            // Open global picker
+            if(window.LocationPicker) {
+                LocationPicker.open((data) => {
+                    // Save new location
+                    localStorage.setItem('user_lat', data.lat);
+                    localStorage.setItem('user_lng', data.lng);
+                    localStorage.setItem('user_address_text', data.address);
+                    
+                    // Redirect to home to re-check serviceability
+                    window.location.href = '/index.html';
+                });
+            } else {
+                alert("Location service not loaded");
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saved Addresses - QuickDash</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    <link rel="stylesheet" href="/assets/css/pages/account.css">
+</head>
+
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <main class="container">
+        <div class="account-layout">
+            <aside class="account-sidebar">
+                <nav>
+                    <a href="/profile.html" class="sidebar-link"><i class="fas fa-th-large"></i> Dashboard</a>
+                    <a href="/orders.html" class="sidebar-link"><i class="fas fa-box"></i> My Orders</a>
+                    <a href="/addresses.html" class="sidebar-link active"><i class="fas fa-map-marker-alt"></i>
+                        Addresses</a>
+                    <button onclick="logout()" class="sidebar-link logout w-100 border-0 bg-transparent text-left">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </nav>
+            </aside>
+
+            <div class="account-content">
+                <div class="d-flex justify-between align-center mb-4">
+                    <h2>Saved Addresses</h2>
+                    <button class="btn btn-primary btn-sm" onclick="openAddressModal()">
+                        <i class="fas fa-plus"></i> Add New
+                    </button>
+                </div>
+
+                <div id="addr-grid" class="d-grid gap-3"
+                    style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
+                    <div class="loader-spinner"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="address-modal" class="modal-overlay d-none">
+        <div class="modal-box">
+            <h3>Add Address</h3>
+            <form id="address-form">
+                <input type="hidden" id="a-lat">
+                <input type="hidden" id="a-lng">
+
+                <div class="form-group">
+                    <label>Full Address</label>
+                    <input type="text" id="a-text" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>City</label>
+                    <input type="text" id="a-city" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Pincode</label>
+                    <input type="text" id="a-pin" class="form-control" required>
+                </div>
+                <div class="d-flex justify-between mt-3">
+                    <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Address Type</label>
+                    <div class="d-flex gap-3">
+                        <label><input type="radio" name="atype" value="HOME" checked> Home</label>
+                        <label><input type="radio" name="atype" value="WORK"> Work</label>
+                        <label><input type="radio" name="atype" value="OTHER"> Other</label>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/assets/js/config.js"></script>
+    <script src="/assets/js/utils/toast.js"></script>
+    <script src="/assets/js/services/api.service.js"></script>
+    <script src="/assets/js/layout/main-layout.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', loadAddresses);
+
+        async function loadAddresses() {
+            const grid = document.getElementById('addr-grid');
+            try {
+                const res = await ApiService.get('/auth/customer/addresses/');
+                const list = res.results || res;
+
+                if (list.length === 0) {
+                    grid.innerHTML = '<p class="text-muted">No addresses saved.</p>';
+                    return;
+                }
+
+                grid.innerHTML = list.map(a => `
+    <div class="card" style="padding:20px;">
+        <div class="d-flex justify-between mb-2">
+            <span class="badge" ...>${a.label}</span>  <button ...><i class="fas fa-trash"></i></button>
+        </div>
+        <p class="mb-0 text-muted">${a.address_line}</p> <p class="text-muted small">${a.city} - ${a.pincode}</p>
+    </div>
+`).join('');
+            } catch (e) { grid.innerHTML = 'Error loading addresses'; }
+        }
+
+        window.openAddressModal = () => {
+            // 1. Open Map First to get accurate pin
+            if (window.LocationPicker) {
+                LocationPicker.open((data) => {
+                    // 2. Map Close hone ke baad, Modal open karo with Pre-filled Data
+                    const modal = document.getElementById('address-modal');
+                    modal.classList.remove('d-none');
+
+                    document.getElementById('a-lat').value = data.lat;
+                    document.getElementById('a-lng').value = data.lng;
+                    document.getElementById('a-text').value = data.address;
+                    document.getElementById('a-city').value = data.city;
+                    document.getElementById('a-pin').value = data.pincode;
+                });
+            } else {
+                alert("Location Picker loading...");
+            }
+        };
+
+        window.closeModal = () => {
+            document.getElementById('address-modal').classList.add('d-none');
+        }
+
+        document.getElementById('address-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Strict Validation
+            const lat = document.getElementById('a-lat').value;
+            if (!lat) { Toast.error("Invalid Location Data"); return; }
+
+            const payload = {
+                address_line: document.getElementById('a-text').value,
+                label: document.querySelector('input[name="atype"]:checked').value,
+                city: document.getElementById('a-city').value,
+                pincode: document.getElementById('a-pin').value,
+                latitude: lat,
+                longitude: document.getElementById('a-lng').value
+            };
+            try {
+                await ApiService.post('/auth/customer/addresses/', payload);
+                Toast.success("Address Added");
+                closeModal();
+                loadAddresses();
+            } catch (e) { Toast.error("Failed to add"); }
+        });
+
+        window.deleteAddress = async (id) => {
+            if (!confirm("Delete this address?")) return;
+            try {
+                await ApiService.delete(`/auth/customer/addresses/${id}/`);
+                loadAddresses();
+                Toast.success("Deleted");
+            } catch (e) { Toast.error("Failed to delete"); }
+        }
+    </script>
+</body>
+
+</html>
